@@ -1,0 +1,5 @@
+.claude
+.idea
+.gradle
+build
+gradle-wrapper*
