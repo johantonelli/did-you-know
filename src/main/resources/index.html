@@ -93,7 +93,7 @@
             border-top: 3px solid #000000;
         }
 
-        #reload-btn {
+        #reload-btn, #copy-btn {
             background: #D4D0C8;
             color: #000000;
             border: 2px outset #FFFFFF;
@@ -103,15 +103,20 @@
             font-weight: bold;
             font-family: 'Arial', sans-serif;
             box-shadow: 2px 2px 0px #808080;
+            margin: 5px;
         }
 
-        #reload-btn:hover {
+        #reload-btn:hover, #copy-btn:hover {
             background: #E8E4DC;
         }
 
-        #reload-btn:active {
+        #reload-btn:active, #copy-btn:active {
             border-style: inset;
             box-shadow: none;
+        }
+
+        #copy-btn {
+            display: none;
         }
 
         .spinner {
@@ -145,6 +150,7 @@
         </div>
 
         <div class="button-container">
+            <button id="copy-btn">Copy to clipboard</button>
             <button id="reload-btn">Get Another Fact</button>
         </div>
     </div>

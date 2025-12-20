@@ -11,6 +11,8 @@ data class WikiPage(
     val url: String
 )
 
+var currentPage: WikiPage? = null
+
 fun main() {
     window.onload = {
         setupUI()
@@ -19,9 +21,15 @@ fun main() {
 }
 
 fun setupUI() {
-    val button = document.getElementById("reload-btn") as? HTMLButtonElement
-    button?.onclick = {
+    val reloadButton = document.getElementById("reload-btn") as? HTMLButtonElement
+    reloadButton?.onclick = {
         loadRandomFact()
+        null
+    }
+
+    val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
+    copyButton?.onclick = {
+        copyToClipboard()
         null
     }
 }
@@ -29,15 +37,19 @@ fun setupUI() {
 fun loadRandomFact() {
     val factContainer = document.getElementById("fact-container") as? HTMLDivElement
     val loadingDiv = document.getElementById("loading") as? HTMLDivElement
+    val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
 
     factContainer?.style?.display = "none"
     loadingDiv?.style?.display = "block"
+    copyButton?.style?.display = "none"
 
     fetchRandomWikipediaArticle()
         .then { page ->
+            currentPage = page
             displayFact(page)
             loadingDiv?.style?.display = "none"
             factContainer?.style?.display = "block"
+            copyButton?.style?.display = "inline-block"
         }
         .catch { error ->
             console.error("Error fetching article:", error)
@@ -66,18 +78,8 @@ fun fetchRandomWikipediaArticle(): Promise<WikiPage> {
             val page = pages[pageId].asDynamic()
 
             val title = page.title as String
-            val fullExtract = page.extract as String
-
-            // Get first 100 words
-            val words = fullExtract.split(Regex("\\s+"))
-            val extract = if (words.size > 100) {
-                words.take(100).joinToString(" ") + "..."
-            } else {
-                fullExtract
-            }
-
+            val extract = page.extract as String
             val articleUrl = "https://en.wikipedia.org/wiki/${title.replace(" ", "_")}"
-
             WikiPage(title, extract, articleUrl)
         }
 }
@@ -98,4 +100,29 @@ fun displayError() {
 
     titleElement?.textContent = "Oops!"
     textElement?.textContent = "Failed to load a random fact. Please try again!"
+}
+
+fun copyToClipboard() {
+    val page = currentPage ?: return
+
+    val textToCopy = """
+        Did you know...
+
+        ${page.extract}
+
+        ${page.url}
+    """.trimIndent()
+
+    window.navigator.clipboard.writeText(textToCopy)
+        .then {
+            val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
+            val originalText = copyButton?.textContent
+            copyButton?.textContent = "Copied!"
+            window.setTimeout({
+                copyButton?.textContent = originalText
+            }, 2000)
+        }
+        .catch { error ->
+            console.error("Failed to copy:", error)
+        }
 }
