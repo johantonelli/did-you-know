@@ -4,107 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Did you know...</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💡</text></svg>">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Courier New', monospace;
+            background-color: #C0C0C0;
+            margin: 0;
             padding: 20px;
+            color: #000000;
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: #FFFFFF;
+            border: 3px solid #000000;
             max-width: 800px;
-            width: 100%;
-            padding: 40px;
+            margin: 0 auto;
+            padding: 0;
         }
 
         h1 {
-            color: #667eea;
-            margin-bottom: 30px;
+            background: #000080;
+            color: #FFFFFF;
             text-align: center;
-            font-size: 2.5em;
+            font-size: 2em;
+            margin: 0;
+            padding: 15px;
+            font-family: 'Arial', sans-serif;
+            border-bottom: 3px solid #000000;
+        }
+
+        hr {
+            border: 0;
+            height: 2px;
+            background: #000000;
+            margin: 20px 0;
         }
 
         #loading {
             text-align: center;
-            padding: 40px;
-            color: #667eea;
+            padding: 40px 20px;
+            color: #000080;
             font-size: 1.2em;
-        }
-
-        #fact-container {
-            margin-bottom: 30px;
-        }
-
-        #fact-title {
-            color: #333;
-            font-size: 1.8em;
-            margin-bottom: 20px;
             font-weight: bold;
         }
 
+        #fact-container {
+            margin: 20px;
+            background: #FFFFCC;
+            border: 2px solid #000000;
+            padding: 20px;
+        }
+
+        #fact-title {
+            color: #000080;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+        }
+
         #fact-text {
-            color: #555;
-            font-size: 1.1em;
-            line-height: 1.8;
-            margin-bottom: 20px;
-            text-align: justify;
+            color: #000000;
+            font-size: 1.15em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-family: 'Arial', sans-serif;
         }
 
         #fact-link {
-            display: inline-block;
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: border-color 0.3s;
+            color: #0000EE;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        #fact-link:visited {
+            color: #551A8B;
         }
 
         #fact-link:hover {
-            border-bottom-color: #667eea;
+            color: #FF0000;
         }
 
         .button-container {
             text-align: center;
+            margin: 20px;
+            padding: 20px;
+            background: #E0E0E0;
+            border-top: 3px solid #000000;
         }
 
         #reload-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.1em;
-            border-radius: 50px;
+            background: #D4D0C8;
+            color: #000000;
+            border: 2px outset #FFFFFF;
+            padding: 8px 25px;
+            font-size: 1em;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            font-weight: 600;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            box-shadow: 2px 2px 0px #808080;
         }
 
         #reload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: #E8E4DC;
         }
 
         #reload-btn:active {
-            transform: translateY(0);
+            border-style: inset;
+            box-shadow: none;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
+            border: 4px solid #C0C0C0;
+            border-top: 4px solid #000080;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
@@ -114,24 +126,6 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 2em;
-            }
-
-            #fact-title {
-                font-size: 1.5em;
-            }
-
-            #fact-text {
-                font-size: 1em;
-            }
         }
     </style>
 </head>
@@ -147,7 +141,7 @@
         <div id="fact-container" style="display: none;">
             <h2 id="fact-title"></h2>
             <p id="fact-text"></p>
-            <a id="fact-link" href="#" target="_blank">Read full article →</a>
+            <a id="fact-link" href="#" target="_blank">Read more</a>
         </div>
 
         <div class="button-container">
