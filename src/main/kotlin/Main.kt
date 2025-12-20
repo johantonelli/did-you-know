@@ -20,11 +20,6 @@ fun main() {
     }
 }
 
-fun getCategoryFromUrl(): String? {
-    val urlParams = js("new URLSearchParams(window.location.search)")
-    return urlParams.get("category") as? String
-}
-
 fun setupUI() {
     val reloadButton = document.getElementById("reload-btn") as? HTMLButtonElement
     reloadButton?.onclick = {
@@ -65,35 +60,6 @@ fun loadRandomFact() {
 }
 
 fun fetchRandomWikipediaArticle(): Promise<WikiPage> {
-    val category = getCategoryFromUrl()
-
-    return if (category != null) {
-        // Use Special:RandomInCategory for true randomness
-        fetchRandomFromCategory(category)
-    } else {
-        // Use completely random selection
-        fetchCompletelyRandom()
-    }
-}
-
-fun fetchRandomFromCategory(category: String): Promise<WikiPage> {
-    val specialPageUrl = "https://en.wikipedia.org/wiki/Special:RandomInCategory/$category"
-
-    return window.fetch(specialPageUrl)
-        .then { response ->
-            // The response.url contains the final URL after redirect
-            val finalUrl = response.url
-            extractTitleFromUrl(finalUrl)
-        }
-        .then { title ->
-            fetchArticleByTitle(title)
-        }
-        .then { wikiPage ->
-            wikiPage
-        }
-}
-
-fun fetchCompletelyRandom(): Promise<WikiPage> {
     val url = "https://en.wikipedia.org/w/api.php?" +
             "action=query&" +
             "format=json&" +
@@ -115,37 +81,6 @@ fun fetchCompletelyRandom(): Promise<WikiPage> {
             val extract = page.extract as String
             val articleUrl = "https://en.wikipedia.org/wiki/${title.replace(" ", "_")}"
             WikiPage(title, extract, articleUrl)
-        }
-}
-
-fun extractTitleFromUrl(url: String): String {
-    // Extract title from URL like "https://en.wikipedia.org/wiki/Article_Title"
-    val parts = url.split("/wiki/")
-    val encodedTitle = parts[1]
-    return js("decodeURIComponent(encodedTitle)") as String
-}
-
-fun fetchArticleByTitle(title: String): Promise<WikiPage> {
-    val url = "https://en.wikipedia.org/w/api.php?" +
-            "action=query&" +
-            "format=json&" +
-            "prop=extracts&" +
-            "exintro=true&" +
-            "explaintext=true&" +
-            "titles=${js("encodeURIComponent(title)")}&" +
-            "origin=*"
-
-    return window.fetch(url)
-        .then { response -> response.json() }
-        .then { data ->
-            val pages = (data.asDynamic().query.pages) as Json
-            val pageId = js("Object.keys(pages)[0]") as String
-            val page = pages[pageId].asDynamic()
-
-            val pageTitle = page.title as String
-            val extract = page.extract as String
-            val articleUrl = "https://en.wikipedia.org/wiki/${title.replace(" ", "_")}"
-            WikiPage(pageTitle, extract, articleUrl)
         }
 }
 
