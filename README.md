@@ -7,9 +7,28 @@ A simple static website built with Kotlin/JS that displays random Wikipedia arti
 ## Features
 
 - Fetches random Wikipedia articles using the Wikipedia API
+- **Category filtering**: Browse facts by category using URL paths (e.g., `/science`, `/history`)
 - Displays the first 100 words with a link to the full article
 - Built entirely with Kotlin/JS
 - Deployed as a static site on GitHub Pages
+
+## Categories
+
+You can filter random facts by category using the URL path:
+
+- `/` - All categories (completely random)
+- `/science` - Science articles
+- `/history` - History articles
+- `/technology` - Technology articles
+- `/animals` - Animal articles
+- `/geography` - Geography articles
+- `/music` - Music articles
+- `/art` - Art articles
+- `/sports` - Sports articles
+
+**Custom categories**: You can also use any Wikipedia category by typing it in the URL. For example, `/Physics` will fetch random articles from Wikipedia's "Category:Physics".
+
+**Local file usage**: When opening the HTML file locally (via `file://`), use hash-based URLs instead (e.g., `#science`, `#history`). The category links at the bottom of the page will work automatically in both modes.
 
 ## Prerequisites
 
@@ -89,9 +108,10 @@ Your site will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPO/`
 ## How It Works
 
 1. **Kotlin/JS Compilation**: Kotlin code is compiled to JavaScript using the Kotlin/JS compiler
-2. **Wikipedia API**: Uses Wikipedia's public API to fetch random articles
-3. **Dynamic Content**: JavaScript fetches and displays new content on each page load
-4. **GitHub Pages**: Serves the static HTML and compiled JavaScript files
+2. **URL-based Routing**: The URL path determines which Wikipedia category to fetch from
+3. **Wikipedia API**: Uses Wikipedia's public API to fetch random articles or category members
+4. **Dynamic Content**: JavaScript fetches and displays new content on each page load or button click
+5. **GitHub Pages**: Serves the static HTML and compiled JavaScript files
 
 ## Technologies Used
 

@@ -1,9 +1,12 @@
 import kotlinx.browser.document
 import kotlinx.browser.window
+import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 import kotlin.js.Json
 import kotlin.js.Promise
+import kotlin.random.Random
 
 data class WikiPage(
     val title: String,
@@ -11,13 +14,46 @@ data class WikiPage(
     val url: String
 )
 
+data class Category(
+    val name: String,
+    val displayName: String,
+    val wikiCategory: String
+)
+
+val predefinedCategories = listOf(
+    Category("science", "Science", "Category:Science"),
+    Category("history", "History", "Category:History"),
+    Category("technology", "Technology", "Category:Technology"),
+    Category("animals", "Animals", "Category:Animals"),
+    Category("geography", "Geography", "Category:Geography"),
+    Category("music", "Music", "Category:Music"),
+    Category("art", "Art", "Category:Art"),
+    Category("sports", "Sports", "Category:Sports")
+)
+
 var currentPage: WikiPage? = null
+var currentCategory: String? = null
 
 fun main() {
     window.onload = {
+        currentCategory = getCategoryFromUrl()
         setupUI()
+        setupCategoryLinks()
         loadRandomFact()
     }
+}
+
+fun getCategoryFromUrl(): String? {
+    // First check hash (works locally): e.g., #science
+    val hash = window.location.hash.trimStart('#').takeIf { it.isNotEmpty() }
+    if (hash != null) return hash
+
+    // Then check path (works on server): e.g., /science
+    val path = window.location.pathname.trim('/').takeIf { it.isNotEmpty() }
+    // Ignore if path looks like a file (local file access)
+    if (path != null && !path.contains('.')) return path
+
+    return null
 }
 
 fun setupUI() {
@@ -32,6 +68,84 @@ fun setupUI() {
         copyToClipboard()
         null
     }
+
+    updateCategoryDisplay()
+}
+
+fun setupCategoryLinks() {
+    val categoryLinksContainer = document.getElementById("category-links") as? HTMLElement ?: return
+    val isLocalFile = window.location.protocol == "file:"
+
+    // Add "All" link
+    val allLink = document.createElement("a") as HTMLAnchorElement
+    allLink.href = if (isLocalFile) "#" else "/"
+    allLink.textContent = "All"
+    if (currentCategory == null) {
+        allLink.classList.add("active")
+    }
+    allLink.onclick = { e ->
+        if (isLocalFile) {
+            e.preventDefault()
+            window.location.hash = ""
+            currentCategory = null
+            updateCategoryDisplay()
+            loadRandomFact()
+            updateActiveLink(categoryLinksContainer, null)
+        }
+        null
+    }
+    categoryLinksContainer.appendChild(allLink)
+
+    // Add predefined category links
+    predefinedCategories.forEach { category ->
+        val link = document.createElement("a") as HTMLAnchorElement
+        link.href = if (isLocalFile) "#${category.name}" else "/${category.name}"
+        link.textContent = category.displayName
+        if (currentCategory?.lowercase() == category.name) {
+            link.classList.add("active")
+        }
+        link.onclick = { e ->
+            if (isLocalFile) {
+                e.preventDefault()
+                window.location.hash = category.name
+                currentCategory = category.name
+                updateCategoryDisplay()
+                loadRandomFact()
+                updateActiveLink(categoryLinksContainer, category.name)
+            }
+            null
+        }
+        categoryLinksContainer.appendChild(link)
+    }
+}
+
+fun updateActiveLink(container: HTMLElement, activeCategoryName: String?) {
+    val links = container.querySelectorAll("a")
+    for (i in 0 until links.length) {
+        val link = links.item(i) as? HTMLElement ?: continue
+        link.classList.remove("active")
+        val linkText = link.textContent?.lowercase()
+        val isActive = if (activeCategoryName == null) {
+            linkText == "all"
+        } else {
+            linkText == predefinedCategories.find { it.name == activeCategoryName }?.displayName?.lowercase()
+        }
+        if (isActive) {
+            link.classList.add("active")
+        }
+    }
+}
+
+fun updateCategoryDisplay() {
+    val categoryDisplay = document.getElementById("current-category") as? HTMLElement
+    val displayName = getCurrentCategoryDisplayName()
+    categoryDisplay?.textContent = if (displayName != null) "Category: $displayName" else "All Categories"
+}
+
+fun getCurrentCategoryDisplayName(): String? {
+    val cat = currentCategory ?: return null
+    val predefined = predefinedCategories.find { it.name == cat.lowercase() }
+    return predefined?.displayName ?: cat.replaceFirstChar { it.uppercase() }
 }
 
 fun loadRandomFact() {
@@ -60,6 +174,16 @@ fun loadRandomFact() {
 }
 
 fun fetchRandomWikipediaArticle(): Promise<WikiPage> {
+    val category = currentCategory
+
+    return if (category != null) {
+        fetchRandomFromCategory(category)
+    } else {
+        fetchCompletelyRandom()
+    }
+}
+
+fun fetchCompletelyRandom(): Promise<WikiPage> {
     val url = "https://en.wikipedia.org/w/api.php?" +
             "action=query&" +
             "format=json&" +
@@ -73,15 +197,107 @@ fun fetchRandomWikipediaArticle(): Promise<WikiPage> {
     return window.fetch(url)
         .then { response -> response.json() }
         .then { data ->
-            val pages = (data.asDynamic().query.pages) as Json
-            val pageId = js("Object.keys(pages)[0]") as String
-            val page = pages[pageId].asDynamic()
-
-            val title = page.title as String
-            val extract = page.extract as String
-            val articleUrl = "https://en.wikipedia.org/wiki/${title.replace(" ", "_")}"
-            WikiPage(title, extract, articleUrl)
+            parseWikiPage(data)
         }
+}
+
+// Store collected page IDs for random selection
+var collectedPageIds = mutableListOf<Int>()
+
+fun fetchRandomFromCategory(categoryName: String): Promise<WikiPage> {
+    // Find if it's a predefined category or use as custom
+    val predefined = predefinedCategories.find { it.name == categoryName.lowercase() }
+    val wikiCategory = predefined?.wikiCategory ?: "Category:${categoryName.replaceFirstChar { it.uppercase() }}"
+    val encodedCategory = js("encodeURIComponent")(wikiCategory) as String
+
+    // Clear previous collection
+    collectedPageIds = mutableListOf()
+
+    // Fetch multiple pages to build a larger pool (up to 10,000 articles)
+    return fetchCategoryPages(encodedCategory, null, 0)
+        .then {
+            if (collectedPageIds.isEmpty()) {
+                throw Exception("No articles found in this category")
+            }
+            // Pick a random article from our collected pool
+            val randomIndex = Random.nextInt(collectedPageIds.size)
+            val pageId = collectedPageIds[randomIndex]
+            fetchArticleById(pageId)
+        }
+        .then { page: WikiPage -> page }
+}
+
+fun fetchCategoryPages(encodedCategory: String, continueToken: String?, pagesFetched: Int): Promise<Unit> {
+    // Stop after collecting ~10,000 articles or 20 requests
+    if (pagesFetched >= 10000) {
+        return Promise.resolve(Unit)
+    }
+
+    var url = "https://en.wikipedia.org/w/api.php?" +
+            "action=query&" +
+            "format=json&" +
+            "list=categorymembers&" +
+            "cmtitle=$encodedCategory&" +
+            "cmlimit=500&" +
+            "cmnamespace=0&" +
+            "cmtype=page&" +
+            "origin=*"
+
+    if (continueToken != null) {
+        url += "&cmcontinue=$continueToken"
+    }
+
+    return window.fetch(url)
+        .then { response -> response.json() }
+        .then { data ->
+            val members = data.asDynamic().query?.categorymembers
+            if (members != null) {
+                val length = members.length as Int
+                for (i in 0 until length) {
+                    val pageId = members[i].pageid as Int
+                    collectedPageIds.add(pageId)
+                }
+            }
+
+            // Check if there are more pages
+            val continueData = data.asDynamic().`continue`
+            val nextToken = continueData?.cmcontinue as? String
+
+            if (nextToken != null && collectedPageIds.size < 10000) {
+                fetchCategoryPages(encodedCategory, nextToken, collectedPageIds.size)
+            } else {
+                Promise.resolve(Unit)
+            }
+        }
+        .then { Unit }
+}
+
+fun fetchArticleById(pageId: Int): Promise<WikiPage> {
+    val url = "https://en.wikipedia.org/w/api.php?" +
+            "action=query&" +
+            "format=json&" +
+            "prop=extracts&" +
+            "exintro=true&" +
+            "explaintext=true&" +
+            "pageids=$pageId&" +
+            "origin=*"
+
+    return window.fetch(url)
+        .then { response -> response.json() }
+        .then { data ->
+            parseWikiPage(data)
+        }
+}
+
+fun parseWikiPage(data: dynamic): WikiPage {
+    val pages = data.query.pages as Json
+    val pageId = js("Object.keys(pages)[0]") as String
+    val page = pages[pageId].asDynamic()
+
+    val title = page.title as String
+    val extract = (page.extract as? String) ?: "No description available."
+    val articleUrl = "https://en.wikipedia.org/wiki/${js("encodeURIComponent")(title.replace(" ", "_"))}"
+    return WikiPage(title, extract, articleUrl)
 }
 
 fun displayFact(page: WikiPage) {

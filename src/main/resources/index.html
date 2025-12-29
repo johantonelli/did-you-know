@@ -93,6 +93,64 @@
             border-top: 3px solid #000000;
         }
 
+        #current-category {
+            text-align: center;
+            padding: 8px;
+            background: #E0E0E0;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9em;
+            color: #000080;
+            border-bottom: 2px solid #808080;
+        }
+
+        .category-section {
+            background: #E0E0E0;
+            border-top: 3px solid #000000;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .category-section h3 {
+            margin: 0 0 10px 0;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9em;
+            color: #000000;
+        }
+
+        #category-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        #category-links a {
+            background: #D4D0C8;
+            color: #000000;
+            text-decoration: none;
+            padding: 5px 12px;
+            border: 2px outset #FFFFFF;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.85em;
+            box-shadow: 1px 1px 0px #808080;
+        }
+
+        #category-links a:hover {
+            background: #E8E4DC;
+        }
+
+        #category-links a:active {
+            border-style: inset;
+            box-shadow: none;
+        }
+
+        #category-links a.active {
+            background: #000080;
+            color: #FFFFFF;
+            border-style: inset;
+        }
+
         #reload-btn, #copy-btn {
             background: #D4D0C8;
             color: #000000;
@@ -137,6 +195,7 @@
 <body>
     <div class="container">
         <h1>Did you know...</h1>
+        <div id="current-category">All Categories</div>
 
         <div id="loading" style="display: block;">
             <div class="spinner"></div>
@@ -152,6 +211,11 @@
         <div class="button-container">
             <button id="copy-btn">Copy to clipboard</button>
             <button id="reload-btn">Get Another Fact</button>
+        </div>
+
+        <div class="category-section">
+            <h3>Browse by Category:</h3>
+            <div id="category-links"></div>
         </div>
     </div>
 
