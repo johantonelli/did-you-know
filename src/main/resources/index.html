@@ -3,186 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Did you know...</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💡</text></svg>">
+    <title>Did You Know...</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>&#10024;</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Fonts */
+            --font-display: 'Playfair Display', 'Georgia', serif;
+            --font-body: 'Raleway', 'Helvetica Neue', sans-serif;
+
+            /* Colors */
+            --dusty-rose: #D4A5A5;
+            --salmon-pink: #E8B4B8;
+            --mustard: #D4A84B;
+            --pale-mustard: #E5D4A1;
+            --powder-blue: #A8CCD7;
+            --pale-blue: #D4E5ED;
+            --mint: #B4D4C4;
+            --cream: #FDF6E3;
+            --warm-cream: #F5E6D3;
+            --terracotta: #C67B5C;
+            --burgundy: #8B4049;
+            --forest: #5C7B6B;
+            --charcoal: #3D3D3D;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Courier New', monospace;
-            background-color: #C0C0C0;
+            font-family: var(--font-body);
+            background-color: var(--warm-cream);
             margin: 0;
-            padding: 20px;
-            color: #000000;
+            padding: 40px 20px;
+            color: var(--charcoal);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .container {
-            background: #FFFFFF;
-            border: 3px solid #000000;
-            max-width: 800px;
+            background: var(--cream);
+            border: 3px solid var(--charcoal);
+            max-width: 680px;
+            width: 100%;
             margin: 0 auto;
             padding: 0;
+            box-shadow: 8px 8px 0px var(--dusty-rose);
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            border: 1px solid var(--charcoal);
+            pointer-events: none;
+        }
+
+        .header {
+            background: var(--powder-blue);
+            border-bottom: 3px solid var(--charcoal);
+            padding: 30px 20px 25px;
+            text-align: center;
+        }
+
+        .header-decoration {
+            font-size: 0.75em;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--charcoal);
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
         h1 {
-            background: #000080;
-            color: #FFFFFF;
-            text-align: center;
-            font-size: 2em;
+            font-family: var(--font-display);
+            color: var(--charcoal);
+            font-size: 2.4em;
             margin: 0;
-            padding: 15px;
-            font-family: 'Arial', sans-serif;
-            border-bottom: 3px solid #000000;
-        }
-
-        hr {
-            border: 0;
-            height: 2px;
-            background: #000000;
-            margin: 20px 0;
-        }
-
-        #loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #000080;
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        #fact-container {
-            margin: 20px;
-            background: #FFFFCC;
-            border: 2px solid #000000;
-            padding: 20px;
-        }
-
-        #fact-title {
-            color: #000080;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-            font-weight: bold;
-            font-family: 'Arial', sans-serif;
-        }
-
-        #fact-text {
-            color: #000000;
-            font-size: 1.15em;
-            line-height: 1.6;
-            margin-bottom: 15px;
-            font-family: 'Arial', sans-serif;
-        }
-
-        #fact-link {
-            color: #0000EE;
-            text-decoration: underline;
-            font-weight: bold;
-        }
-
-        #fact-link:visited {
-            color: #551A8B;
-        }
-
-        #fact-link:hover {
-            color: #FF0000;
-        }
-
-        .button-container {
-            text-align: center;
-            margin: 20px;
-            padding: 20px;
-            background: #E0E0E0;
-            border-top: 3px solid #000000;
+            font-weight: 600;
+            letter-spacing: 0.02em;
         }
 
         #current-category {
             text-align: center;
-            padding: 8px;
-            background: #E0E0E0;
-            font-weight: bold;
-            font-family: 'Arial', sans-serif;
-            font-size: 0.9em;
-            color: #000080;
-            border-bottom: 2px solid #808080;
+            padding: 12px 20px;
+            background: var(--pale-mustard);
+            font-weight: 500;
+            font-size: 0.8em;
+            color: var(--charcoal);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--charcoal);
         }
 
-        .category-section {
-            background: #E0E0E0;
-            border-top: 3px solid #000000;
-            padding: 15px;
+        #loading {
             text-align: center;
-        }
-
-        .category-section h3 {
-            margin: 0 0 10px 0;
-            font-family: 'Arial', sans-serif;
-            font-size: 0.9em;
-            color: #000000;
-        }
-
-        #category-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        #category-links a {
-            background: #D4D0C8;
-            color: #000000;
-            text-decoration: none;
-            padding: 5px 12px;
-            border: 2px outset #FFFFFF;
-            font-family: 'Arial', sans-serif;
-            font-size: 0.85em;
-            box-shadow: 1px 1px 0px #808080;
-        }
-
-        #category-links a:hover {
-            background: #E8E4DC;
-        }
-
-        #category-links a:active {
-            border-style: inset;
-            box-shadow: none;
-        }
-
-        #category-links a.active {
-            background: #000080;
-            color: #FFFFFF;
-            border-style: inset;
-        }
-
-        #reload-btn, #copy-btn {
-            background: #D4D0C8;
-            color: #000000;
-            border: 2px outset #FFFFFF;
-            padding: 8px 25px;
+            padding: 60px 30px;
+            color: var(--charcoal);
             font-size: 1em;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: 'Arial', sans-serif;
-            box-shadow: 2px 2px 0px #808080;
-            margin: 5px;
+            letter-spacing: 0.1em;
         }
 
-        #reload-btn:hover, #copy-btn:hover {
-            background: #E8E4DC;
-        }
-
-        #reload-btn:active, #copy-btn:active {
-            border-style: inset;
-            box-shadow: none;
-        }
-
-        #copy-btn {
-            display: none;
+        #loading p {
+            font-family: var(--font-display);
+            margin-top: 25px;
+            font-style: italic;
         }
 
         .spinner {
-            border: 4px solid #C0C0C0;
-            border-top: 4px solid #000080;
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
+            border: 3px solid var(--pale-blue);
+            border-top: 3px solid var(--terracotta);
+            border-radius: 50%;
+            animation: spin 1.2s ease-in-out infinite;
             margin: 0 auto;
         }
 
@@ -190,32 +133,219 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        #fact-container {
+            margin: 25px;
+            background: var(--cream);
+            border: 2px solid var(--charcoal);
+            padding: 30px;
+            position: relative;
+        }
+
+        #fact-container::before {
+            content: '"';
+            font-family: var(--font-display);
+            font-size: 4em;
+            color: var(--dusty-rose);
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            line-height: 1;
+            opacity: 0.6;
+        }
+
+        #fact-title {
+            font-family: var(--font-display);
+            color: var(--burgundy);
+            font-size: 1.5em;
+            margin: 0 0 20px 0;
+            font-weight: 600;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--dusty-rose);
+        }
+
+        #fact-text {
+            color: var(--charcoal);
+            font-size: 1.05em;
+            line-height: 1.8;
+            margin: 0 0 20px 0;
+            text-align: justify;
+            font-weight: 300;
+        }
+
+        #fact-link {
+            display: block;
+            text-align: center;
+            font-family: var(--font-display);
+            color: var(--terracotta);
+            text-decoration: none;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            font-size: 0.95em;
+            font-style: italic;
+            padding-top: 15px;
+            border-top: 1px solid var(--dusty-rose);
+            transition: color 0.2s ease;
+        }
+
+        #fact-link:hover {
+            color: var(--burgundy);
+        }
+
+        #fact-link::after {
+            content: ' \2192';
+        }
+
+        .button-container {
+            text-align: center;
+            padding: 25px;
+            background: var(--mint);
+            border-top: 2px solid var(--charcoal);
+            border-bottom: 2px solid var(--charcoal);
+        }
+
+        #reload-btn, #copy-btn {
+            background: var(--cream);
+            color: var(--charcoal);
+            border: 2px solid var(--charcoal);
+            padding: 12px 30px;
+            font-size: 0.8em;
+            cursor: pointer;
+            font-weight: 500;
+            font-family: inherit;
+            letter-spacing: 0.05em;
+            margin: 5px 8px;
+            transition: all 0.2s ease;
+            box-shadow: 3px 3px 0px var(--charcoal);
+        }
+
+        #reload-btn:hover, #copy-btn:hover {
+            background: var(--pale-mustard);
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px var(--charcoal);
+        }
+
+        #reload-btn:active, #copy-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px var(--charcoal);
+        }
+
+        #copy-btn {
+            display: none;
+        }
+
+        .category-section {
+            background: var(--salmon-pink);
+            padding: 25px;
+            text-align: center;
+        }
+
+        .category-section h3 {
+            font-family: var(--font-display);
+            margin: 0 0 18px 0;
+            font-size: 1em;
+            color: var(--charcoal);
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        #category-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        #category-links a {
+            background: var(--cream);
+            color: var(--charcoal);
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid var(--charcoal);
+            font-size: 0.75em;
+            letter-spacing: 0.03em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        #category-links a:hover {
+            background: var(--pale-mustard);
+            transform: translateY(-2px);
+        }
+
+        #category-links a.active {
+            background: var(--burgundy);
+            color: var(--cream);
+        }
+
+        .footer {
+            font-family: var(--font-display);
+            text-align: center;
+            padding: 15px;
+            background: var(--charcoal);
+            color: var(--cream);
+            font-size: 0.8em;
+            letter-spacing: 0.05em;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 15px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            #fact-container {
+                margin: 15px;
+                padding: 20px;
+            }
+
+            #fact-title {
+                font-size: 1.3em;
+            }
+
+            #reload-btn, #copy-btn {
+                padding: 10px 20px;
+                font-size: 0.8em;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Did you know...</h1>
+        <div class="header">
+            <div class="header-decoration">A Curious Collection</div>
+            <h1>Did You Know...</h1>
+        </div>
         <div id="current-category">All Categories</div>
 
         <div id="loading" style="display: block;">
             <div class="spinner"></div>
-            <p style="margin-top: 20px;">Loading a random fact...</p>
+            <p>Retrieving a fascinating fact...</p>
         </div>
 
         <div id="fact-container" style="display: none;">
             <h2 id="fact-title"></h2>
             <p id="fact-text"></p>
-            <a id="fact-link" href="#" target="_blank">Read more</a>
+            <a id="fact-link" href="#" target="_blank">Continue Reading</a>
         </div>
 
         <div class="button-container">
-            <button id="copy-btn">Copy to clipboard</button>
-            <button id="reload-btn">Get Another Fact</button>
+            <button id="copy-btn">Copy to Clipboard</button>
+            <button id="reload-btn">Another Fact, Please</button>
         </div>
 
         <div class="category-section">
-            <h3>Browse by Category:</h3>
+            <h3>Browse by Category</h3>
             <div id="category-links"></div>
+        </div>
+
+        <div class="footer">
+            Powered by Wikipedia
         </div>
     </div>
 
