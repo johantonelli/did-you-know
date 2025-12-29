@@ -358,3 +358,125 @@ h1 {
         font-size: 0.8em;
     }
 }
+
+/* Entropy Overlay */
+#entropy-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(61, 61, 61, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    cursor: crosshair;
+}
+
+.entropy-content {
+    text-align: center;
+    color: var(--cream);
+    padding: 40px;
+    max-width: 400px;
+}
+
+.entropy-icon {
+    font-size: 3em;
+    color: var(--pale-mustard);
+    margin-bottom: 20px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.entropy-content h2 {
+    font-family: var(--font-display);
+    font-size: 1.8em;
+    margin: 0 0 10px 0;
+    color: var(--cream);
+}
+
+.entropy-content p {
+    font-size: 1em;
+    margin: 0 0 30px 0;
+    opacity: 0.8;
+}
+
+.entropy-progress {
+    background: var(--charcoal);
+    border: 2px solid var(--cream);
+    height: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.entropy-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--dusty-rose), var(--terracotta), var(--pale-mustard));
+    transition: width 0.1s ease;
+}
+
+.entropy-timer {
+    font-family: var(--font-display);
+    font-size: 3em;
+    font-weight: 600;
+    color: var(--pale-mustard);
+}
+
+.entropy-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.entropy-particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--dusty-rose);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: particle-fade 2s ease-out forwards;
+    pointer-events: none;
+    box-shadow: 0 0 6px currentColor;
+}
+
+.entropy-particle:nth-child(odd) {
+    background: var(--pale-mustard);
+    animation-duration: 2.5s;
+}
+
+.entropy-particle:nth-child(3n) {
+    background: var(--powder-blue);
+    animation-duration: 1.8s;
+}
+
+.entropy-particle:nth-child(5n) {
+    background: var(--terracotta);
+    animation-duration: 2.2s;
+}
+
+@keyframes particle-fade {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2.5);
+    }
+}

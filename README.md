@@ -17,16 +17,18 @@ A simple static website built with Kotlin/JS that displays random Wikipedia arti
 You can filter random facts by category using the URL hash:
 
 - `#` or no hash - All categories (completely random)
-- `#science` - Science articles
-- `#history` - History articles
-- `#technology` - Technology articles
+- `#physics` - Physics articles
+- `#computer-science` - Computer Science articles
 - `#animals` - Animal articles
-- `#geography` - Geography articles
-- `#music` - Music articles
 - `#art` - Art articles
-- `#sports` - Sports articles
+- `#historic-buildings` - Historic Buildings articles
+- `#entropy` - **Special mode**: Generates a random article based on your mouse/touch movements
 
-**Custom categories**: You can also use any Wikipedia category by typing it in the URL hash. For example, `#Physics` will fetch random articles from Wikipedia's "Category:Physics".
+**Custom categories**: You can also use any Wikipedia category by typing it in the URL hash. For example, `#Music` will fetch random articles from Wikipedia's "Category:Music".
+
+### Entropy Mode
+
+The Entropy category is a special interactive mode that uses your cursor or touch movements to generate randomness. Move your cursor or touch the screen for 5 seconds, and your movements will be converted into an "entropy number" that determines which Wikipedia article to fetch. This ensures truly unique, user-influenced randomness!
 
 Category links are available at the bottom of the page for easy navigation.
 
@@ -97,7 +99,8 @@ Your site will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPO/`
 │       ├── kotlin/
 │       │   └── Main.kt          # Kotlin/JS code for Wikipedia API integration
 │       └── resources/
-│           └── index.html       # HTML template with embedded CSS
+│           ├── index.html       # HTML template
+│           └── styles.css       # Stylesheet
 ├── build.gradle.kts             # Gradle build configuration
 ├── settings.gradle.kts          # Gradle settings
 └── .github/
@@ -117,6 +120,7 @@ Your site will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPO/`
 
 - **Kotlin/JS**: Main programming language, compiled to JavaScript
 - **Wikipedia API**: Source of random article data
+- **Font Awesome**: Icons for buttons and categories
 - **GitHub Pages**: Free static site hosting
 - **GitHub Actions**: Automated build and deployment
 
