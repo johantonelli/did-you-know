@@ -214,8 +214,13 @@ h1 {
     color: var(--burgundy);
 }
 
-#fact-link::after {
-    content: ' \2192';
+#fact-link i {
+    margin-left: 4px;
+    transition: transform 0.2s ease;
+}
+
+#fact-link:hover i {
+    transform: translateX(3px);
 }
 
 .button-container {
@@ -250,6 +255,10 @@ h1 {
 #reload-btn:active, #copy-btn:active {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0px var(--charcoal);
+}
+
+#reload-btn i, #copy-btn i {
+    margin-right: 6px;
 }
 
 #copy-btn {
@@ -288,6 +297,10 @@ h1 {
     letter-spacing: 0.03em;
     font-weight: 500;
     transition: all 0.2s ease;
+}
+
+#category-links a i {
+    margin-right: 5px;
 }
 
 #category-links a:hover {

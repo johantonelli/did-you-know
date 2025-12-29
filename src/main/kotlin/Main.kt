@@ -16,18 +16,19 @@ data class WikiPage(
 data class Category(
     val name: String,
     val displayName: String,
-    val wikiCategory: String
+    val wikiCategory: String,
+    val icon: String
 )
 
 val predefinedCategories = listOf(
-    Category("science", "Science", "Category:Science"),
-    Category("history", "History", "Category:History"),
-    Category("technology", "Technology", "Category:Technology"),
-    Category("animals", "Animals", "Category:Animals"),
-    Category("geography", "Geography", "Category:Geography"),
-    Category("music", "Music", "Category:Music"),
-    Category("art", "Art", "Category:Art"),
-    Category("sports", "Sports", "Category:Sports")
+    Category("science", "Science", "Category:Science", "fa-solid fa-flask"),
+    Category("history", "History", "Category:History", "fa-solid fa-landmark"),
+    Category("technology", "Technology", "Category:Technology", "fa-solid fa-microchip"),
+    Category("animals", "Animals", "Category:Animals", "fa-solid fa-paw"),
+    Category("geography", "Geography", "Category:Geography", "fa-solid fa-earth-americas"),
+    Category("music", "Music", "Category:Music", "fa-solid fa-music"),
+    Category("art", "Art", "Category:Art", "fa-solid fa-palette"),
+    Category("sports", "Sports", "Category:Sports", "fa-solid fa-futbol")
 )
 
 // Text cleaning patterns - applied in cleanExtract()
@@ -76,18 +77,26 @@ private fun setupCategoryLinks() {
     val container = document.getElementById("category-links") as? HTMLElement ?: return
 
     // Add "All" link
-    createCategoryLink(container, "All", null)
+    createCategoryLink(container, "All", null, "fa-solid fa-layer-group")
 
     // Add predefined category links
     predefinedCategories.forEach { category ->
-        createCategoryLink(container, category.displayName, category.name)
+        createCategoryLink(container, category.displayName, category.name, category.icon)
     }
 }
 
-private fun createCategoryLink(container: HTMLElement, displayName: String, categoryName: String?) {
+private fun createCategoryLink(container: HTMLElement, displayName: String, categoryName: String?, icon: String) {
     val link = (document.createElement("a") as? HTMLAnchorElement) ?: return
     link.href = if (categoryName != null) "#$categoryName" else "#"
-    link.textContent = displayName
+
+    // Add icon
+    val iconElement = document.createElement("i")
+    icon.split(" ").forEach { cls -> iconElement.classList.add(cls) }
+    link.appendChild(iconElement)
+
+    // Add text
+    val textNode = document.createTextNode(" $displayName")
+    link.appendChild(textNode)
 
     val isActive = if (categoryName == null) {
         currentCategory == null
@@ -118,7 +127,7 @@ private fun updateActiveLink(container: HTMLElement, activeCategoryName: String?
         val link = links.item(i) as? HTMLElement ?: continue
         link.classList.remove("active")
 
-        val linkText = link.textContent?.lowercase() ?: continue
+        val linkText = link.textContent?.trim()?.lowercase() ?: continue
         val isActive = if (activeCategoryName == null) {
             linkText == "all"
         } else {

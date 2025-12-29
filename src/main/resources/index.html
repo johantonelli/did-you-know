@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Did You Know...</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>&#10024;</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='28' fill='%23E5D4A1' stroke='%233D3D3D' stroke-width='3'/%3E%3Cpath d='M38 68 L38 75 Q38 82 50 82 Q62 82 62 75 L62 68' fill='%23C67B5C' stroke='%233D3D3D' stroke-width='2'/%3E%3Cline x1='40' y1='72' x2='60' y2='72' stroke='%233D3D3D' stroke-width='2'/%3E%3Cline x1='40' y1='77' x2='60' y2='77' stroke='%233D3D3D' stroke-width='2'/%3E%3Ccircle cx='50' cy='40' r='12' fill='%23FDF6E3'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!--suppress HtmlUnknownTarget -->
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -28,12 +29,12 @@
             <div class="fact-text-wrapper">
                 <p id="fact-text"></p>
             </div>
-            <a id="fact-link" href="#" target="_blank">Continue Reading</a>
+            <a id="fact-link" href="#" target="_blank">Continue Reading <i class="fa-solid fa-arrow-right"></i></a>
         </div>
 
         <div class="button-container">
-            <button id="copy-btn">Copy to Clipboard</button>
-            <button id="reload-btn">Another Fact, Please</button>
+            <button id="copy-btn"><i class="fa-regular fa-clipboard"></i> Copy to Clipboard</button>
+            <button id="reload-btn"><i class="fa-solid fa-shuffle"></i> Another Fact, Please</button>
         </div>
 
         <div class="category-section">
