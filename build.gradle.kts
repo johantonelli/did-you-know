@@ -18,7 +18,7 @@ kotlin {
                 }
             }
             webpackTask {
-                outputFileName = "wikifacts.js"
+                mainOutputFileName.set("wikifacts.js")
             }
         }
         binaries.executable()
@@ -26,5 +26,5 @@ kotlin {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    // No external dependencies needed - using browser APIs directly
 }

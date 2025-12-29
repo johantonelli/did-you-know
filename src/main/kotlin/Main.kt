@@ -4,7 +4,6 @@ import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
-import kotlin.js.Json
 import kotlin.js.Promise
 import kotlin.random.Random
 
@@ -31,8 +30,17 @@ val predefinedCategories = listOf(
     Category("sports", "Sports", "Category:Sports")
 )
 
-var currentPage: WikiPage? = null
-var currentCategory: String? = null
+// Pre-compiled regex patterns for text cleaning
+private val DISPLAYSTYLE_REGEX = Regex("""\{\\displaystyle[^}]*\}""")
+private val LATEX_COMMAND_REGEX = Regex("""\{\\[a-z]+[^}]*\}""")
+private val BACKSLASH_COMMAND_REGEX = Regex("""\\[a-zA-Z]+""")
+private val CURLY_BRACE_REGEX = Regex("""\{|\}""")
+private val MULTIPLE_SPACES_REGEX = Regex("""\s{2,}""")
+private val SPACE_BEFORE_PUNCTUATION_REGEX = Regex("""\s+([.,;:])""")
+private val UNICODE_SPACES_REGEX = Regex("""[\u2060\u200B\u00A0]+""")
+
+private var currentPage: WikiPage? = null
+private var currentCategory: String? = null
 
 fun main() {
     window.onload = {
@@ -43,21 +51,18 @@ fun main() {
     }
 }
 
-fun getCategoryFromUrl(): String? {
-    // Use hash-based routing (works everywhere): e.g., #science
-    val hash = window.location.hash.trimStart('#').takeIf { it.isNotEmpty() }
-    return hash
+private fun getCategoryFromUrl(): String? {
+    val hash = window.location.hash.trimStart('#')
+    return hash.takeIf { it.isNotEmpty() }
 }
 
-fun setupUI() {
-    val reloadButton = document.getElementById("reload-btn") as? HTMLButtonElement
-    reloadButton?.onclick = {
+private fun setupUI() {
+    (document.getElementById("reload-btn") as? HTMLButtonElement)?.onclick = {
         loadRandomFact()
         null
     }
 
-    val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
-    copyButton?.onclick = {
+    (document.getElementById("copy-btn") as? HTMLButtonElement)?.onclick = {
         copyToClipboard()
         null
     }
@@ -65,78 +70,79 @@ fun setupUI() {
     updateCategoryDisplay()
 }
 
-fun setupCategoryLinks() {
-    val categoryLinksContainer = document.getElementById("category-links") as? HTMLElement ?: return
+private fun setupCategoryLinks() {
+    val container = document.getElementById("category-links") as? HTMLElement ?: return
 
     // Add "All" link
-    val allLink = document.createElement("a") as HTMLAnchorElement
-    allLink.href = "#"
-    allLink.textContent = "All"
-    if (currentCategory == null) {
-        allLink.classList.add("active")
-    }
-    allLink.onclick = { e ->
-        e.preventDefault()
-        window.location.hash = ""
-        currentCategory = null
-        updateCategoryDisplay()
-        loadRandomFact()
-        updateActiveLink(categoryLinksContainer, null)
-        null
-    }
-    categoryLinksContainer.appendChild(allLink)
+    createCategoryLink(container, "All", null)
 
     // Add predefined category links
     predefinedCategories.forEach { category ->
-        val link = document.createElement("a") as HTMLAnchorElement
-        link.href = "#${category.name}"
-        link.textContent = category.displayName
-        if (currentCategory?.lowercase() == category.name) {
-            link.classList.add("active")
-        }
-        link.onclick = { e ->
-            e.preventDefault()
-            window.location.hash = category.name
-            currentCategory = category.name
-            updateCategoryDisplay()
-            loadRandomFact()
-            updateActiveLink(categoryLinksContainer, category.name)
-            null
-        }
-        categoryLinksContainer.appendChild(link)
+        createCategoryLink(container, category.displayName, category.name)
     }
 }
 
-fun updateActiveLink(container: HTMLElement, activeCategoryName: String?) {
+private fun createCategoryLink(container: HTMLElement, displayName: String, categoryName: String?) {
+    val link = (document.createElement("a") as? HTMLAnchorElement) ?: return
+    link.href = if (categoryName != null) "#$categoryName" else "#"
+    link.textContent = displayName
+
+    val isActive = if (categoryName == null) {
+        currentCategory == null
+    } else {
+        currentCategory?.lowercase() == categoryName
+    }
+
+    if (isActive) {
+        link.classList.add("active")
+    }
+
+    link.onclick = { event ->
+        event.preventDefault()
+        window.location.hash = categoryName ?: ""
+        currentCategory = categoryName
+        updateCategoryDisplay()
+        loadRandomFact()
+        updateActiveLink(container, categoryName)
+        null
+    }
+
+    container.appendChild(link)
+}
+
+private fun updateActiveLink(container: HTMLElement, activeCategoryName: String?) {
     val links = container.querySelectorAll("a")
     for (i in 0 until links.length) {
         val link = links.item(i) as? HTMLElement ?: continue
         link.classList.remove("active")
-        val linkText = link.textContent?.lowercase()
+
+        val linkText = link.textContent?.lowercase() ?: continue
         val isActive = if (activeCategoryName == null) {
             linkText == "all"
         } else {
-            linkText == predefinedCategories.find { it.name == activeCategoryName }?.displayName?.lowercase()
+            val predefined = predefinedCategories.find { it.name == activeCategoryName }
+            linkText == predefined?.displayName?.lowercase()
         }
+
         if (isActive) {
             link.classList.add("active")
         }
     }
 }
 
-fun updateCategoryDisplay() {
-    val categoryDisplay = document.getElementById("current-category") as? HTMLElement
+private fun updateCategoryDisplay() {
+    val categoryDisplay = document.getElementById("current-category") as? HTMLElement ?: return
     val displayName = getCurrentCategoryDisplayName()
-    categoryDisplay?.textContent = if (displayName != null) "Category: $displayName" else "All Categories"
+    categoryDisplay.textContent = if (displayName != null) "Category: $displayName" else "All Categories"
 }
 
-fun getCurrentCategoryDisplayName(): String? {
+private fun getCurrentCategoryDisplayName(): String? {
     val cat = currentCategory ?: return null
     val predefined = predefinedCategories.find { it.name == cat.lowercase() }
     return predefined?.displayName ?: cat.replaceFirstChar { it.uppercase() }
 }
 
-fun loadRandomFact() {
+private fun loadRandomFact() {
     val factContainer = document.getElementById("fact-container") as? HTMLDivElement
     val loadingDiv = document.getElementById("loading") as? HTMLDivElement
     val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
@@ -161,9 +167,8 @@ fun loadRandomFact() {
         }
 }
 
-fun fetchRandomWikipediaArticle(): Promise<WikiPage> {
+private fun fetchRandomWikipediaArticle(): Promise<WikiPage> {
     val category = currentCategory
-
     return if (category != null) {
         fetchRandomFromCategory(category)
     } else {
@@ -171,43 +176,36 @@ fun fetchRandomWikipediaArticle(): Promise<WikiPage> {
     }
 }
 
-fun fetchCompletelyRandom(): Promise<WikiPage> {
-    val url = "https://en.wikipedia.org/w/api.php?" +
-            "action=query&" +
-            "format=json&" +
-            "prop=extracts&" +
-            "exintro=true&" +
-            "explaintext=true&" +
-            "generator=random&" +
-            "grnnamespace=0&" +
-            "origin=*"
+private fun fetchCompletelyRandom(): Promise<WikiPage> {
+    val url = buildString {
+        append("https://en.wikipedia.org/w/api.php?")
+        append("action=query&")
+        append("format=json&")
+        append("prop=extracts&")
+        append("exintro=true&")
+        append("explaintext=true&")
+        append("generator=random&")
+        append("grnnamespace=0&")
+        append("origin=*")
+    }
 
     return window.fetch(url)
         .then { response -> response.json() }
-        .then { data ->
-            parseWikiPage(data)
-        }
+        .then { data -> parseWikiPage(data) }
 }
 
-// Store collected page IDs for random selection
-var collectedPageIds = mutableListOf<Int>()
-
-fun fetchRandomFromCategory(categoryName: String): Promise<WikiPage> {
-    // Find if it's a predefined category or use as custom
+private fun fetchRandomFromCategory(categoryName: String): Promise<WikiPage> {
     val predefined = predefinedCategories.find { it.name == categoryName.lowercase() }
     val wikiCategory = predefined?.wikiCategory ?: "Category:${categoryName.replaceFirstChar { it.uppercase() }}"
-    val encodedCategory = js("encodeURIComponent")(wikiCategory) as String
+    val encodedCategory = encodeURIComponent(wikiCategory)
 
-    // Clear previous collection
-    collectedPageIds = mutableListOf()
+    val collectedPageIds = mutableListOf<Int>()
 
-    // Fetch multiple pages to build a larger pool (up to 10,000 articles)
-    return fetchCategoryPages(encodedCategory, null, 0)
+    return fetchCategoryPages(encodedCategory, null, collectedPageIds)
         .then {
             if (collectedPageIds.isEmpty()) {
                 throw Exception("No articles found in this category")
             }
-            // Pick a random article from our collected pool
             val randomIndex = Random.nextInt(collectedPageIds.size)
             val pageId = collectedPageIds[randomIndex]
             fetchArticleById(pageId)
@@ -215,144 +213,146 @@ fun fetchRandomFromCategory(categoryName: String): Promise<WikiPage> {
         .then { page: WikiPage -> page }
 }
 
-fun fetchCategoryPages(encodedCategory: String, continueToken: String?, pagesFetched: Int): Promise<Unit> {
-    // Stop after collecting ~10,000 articles or 20 requests
-    if (pagesFetched >= 10000) {
+private fun fetchCategoryPages(
+    encodedCategory: String,
+    continueToken: String?,
+    pageIds: MutableList<Int>
+): Promise<Unit> {
+    if (pageIds.size >= 10000) {
         return Promise.resolve(Unit)
     }
 
-    var url = "https://en.wikipedia.org/w/api.php?" +
-            "action=query&" +
-            "format=json&" +
-            "list=categorymembers&" +
-            "cmtitle=$encodedCategory&" +
-            "cmlimit=500&" +
-            "cmnamespace=0&" +
-            "cmtype=page&" +
-            "origin=*"
-
-    if (continueToken != null) {
-        url += "&cmcontinue=$continueToken"
+    val url = buildString {
+        append("https://en.wikipedia.org/w/api.php?")
+        append("action=query&")
+        append("format=json&")
+        append("list=categorymembers&")
+        append("cmtitle=$encodedCategory&")
+        append("cmlimit=500&")
+        append("cmnamespace=0&")
+        append("cmtype=page&")
+        append("origin=*")
+        if (continueToken != null) {
+            append("&cmcontinue=$continueToken")
+        }
     }
 
     return window.fetch(url)
         .then { response -> response.json() }
         .then { data ->
-            val members = data.asDynamic().query?.categorymembers
-            if (members != null) {
-                val length = members.length as Int
+            val query = data.asDynamic().query
+            val members = query?.categorymembers
+
+            if (members != null && members != undefined) {
+                val length = members.length as? Int ?: 0
                 for (i in 0 until length) {
-                    val pageId = members[i].pageid as Int
-                    collectedPageIds.add(pageId)
+                    val pageId = members[i].pageid as? Int
+                    if (pageId != null) {
+                        pageIds.add(pageId)
+                    }
                 }
             }
 
-            // Check if there are more pages
             val continueData = data.asDynamic().`continue`
             val nextToken = continueData?.cmcontinue as? String
 
-            if (nextToken != null && collectedPageIds.size < 10000) {
-                fetchCategoryPages(encodedCategory, nextToken, collectedPageIds.size)
+            if (nextToken != null && pageIds.size < 10000) {
+                fetchCategoryPages(encodedCategory, nextToken, pageIds)
             } else {
                 Promise.resolve(Unit)
             }
         }
-        .then { Unit }
 }
 
-fun fetchArticleById(pageId: Int): Promise<WikiPage> {
-    val url = "https://en.wikipedia.org/w/api.php?" +
-            "action=query&" +
-            "format=json&" +
-            "prop=extracts&" +
-            "exintro=true&" +
-            "explaintext=true&" +
-            "pageids=$pageId&" +
-            "origin=*"
+private fun fetchArticleById(pageId: Int): Promise<WikiPage> {
+    val url = buildString {
+        append("https://en.wikipedia.org/w/api.php?")
+        append("action=query&")
+        append("format=json&")
+        append("prop=extracts&")
+        append("exintro=true&")
+        append("explaintext=true&")
+        append("pageids=$pageId&")
+        append("origin=*")
+    }
 
     return window.fetch(url)
         .then { response -> response.json() }
-        .then { data ->
-            parseWikiPage(data)
-        }
+        .then { data -> parseWikiPage(data) }
 }
 
-fun parseWikiPage(data: dynamic): WikiPage {
-    val pages = data.query.pages as Json
-    val pageId = js("Object.keys(pages)[0]") as String
-    val page = pages[pageId].asDynamic()
+private fun parseWikiPage(data: dynamic): WikiPage {
+    val query = data.query ?: throw Exception("Invalid API response: missing query")
+    val pages = query.pages ?: throw Exception("Invalid API response: missing pages")
 
-    val title = page.title as String
+    val pageIds = js("Object.keys(pages)") as Array<String>
+    if (pageIds.isEmpty()) {
+        throw Exception("No pages in response")
+    }
+
+    val pageId = pageIds[0]
+    val page = pages[pageId]
+
+    val title = (page.title as? String) ?: "Unknown Title"
     val rawExtract = (page.extract as? String) ?: "No description available."
     val extract = cleanExtract(rawExtract)
-    val articleUrl = "https://en.wikipedia.org/wiki/${js("encodeURIComponent")(title.replace(" ", "_"))}"
+    val encodedTitle = encodeURIComponent(title.replace(" ", "_"))
+    val articleUrl = "https://en.wikipedia.org/wiki/$encodedTitle"
+
     return WikiPage(title, extract, articleUrl)
 }
 
-fun cleanExtract(text: String): String {
-    // Remove LaTeX displaystyle markup: {\displaystyle ...}
-    var cleaned = text.replace(Regex("""\{\\displaystyle[^}]*\}"""), "")
-
-    // Remove other common LaTeX patterns
-    cleaned = cleaned.replace(Regex("""\{\\[a-z]+[^}]*\}"""), "")
-
-    // Remove standalone backslash commands like \rho, \alpha, etc.
-    cleaned = cleaned.replace(Regex("""\\[a-zA-Z]+"""), "")
-
-    // Remove leftover curly braces
-    cleaned = cleaned.replace(Regex("""\{|\}"""), "")
-
-    // Clean up multiple spaces
-    cleaned = cleaned.replace(Regex("""\s{2,}"""), " ")
-
-    // Clean up spaces before punctuation
-    cleaned = cleaned.replace(Regex("""\s+([.,;:])"""), "$1")
-
-    // Remove the special Unicode characters often used for math (empty boxes, etc.)
-    cleaned = cleaned.replace(Regex("""[\u2060\u200B\u00A0]+"""), " ")
-
-    return cleaned.trim()
+private fun cleanExtract(text: String): String {
+    return text
+        .replace(DISPLAYSTYLE_REGEX, "")
+        .replace(LATEX_COMMAND_REGEX, "")
+        .replace(BACKSLASH_COMMAND_REGEX, "")
+        .replace(CURLY_BRACE_REGEX, "")
+        .replace(MULTIPLE_SPACES_REGEX, " ")
+        .replace(SPACE_BEFORE_PUNCTUATION_REGEX, "$1")
+        .replace(UNICODE_SPACES_REGEX, " ")
+        .trim()
 }
 
-fun displayFact(page: WikiPage) {
-    val titleElement = document.getElementById("fact-title")
-    val textElement = document.getElementById("fact-text")
-    val linkElement = document.getElementById("fact-link")
-
-    titleElement?.textContent = page.title
-    textElement?.textContent = page.extract
-    (linkElement as? org.w3c.dom.HTMLAnchorElement)?.href = page.url
+private fun displayFact(page: WikiPage) {
+    document.getElementById("fact-title")?.textContent = page.title
+    document.getElementById("fact-text")?.textContent = page.extract
+    (document.getElementById("fact-link") as? HTMLAnchorElement)?.href = page.url
 }
 
-fun displayError() {
-    val titleElement = document.getElementById("fact-title")
-    val textElement = document.getElementById("fact-text")
-
-    titleElement?.textContent = "Oops!"
-    textElement?.textContent = "Failed to load a random fact. Please try again!"
+private fun displayError() {
+    document.getElementById("fact-title")?.textContent = "Oops!"
+    document.getElementById("fact-text")?.textContent = "Failed to load a random fact. Please try again!"
 }
 
-fun copyToClipboard() {
+private fun copyToClipboard() {
     val page = currentPage ?: return
 
-    val textToCopy = """
-        Did you know...
+    val textToCopy = buildString {
+        appendLine("Did you know...")
+        appendLine()
+        appendLine(page.extract)
+        appendLine()
+        append(page.url)
+    }
 
-        ${page.extract}
-
-        ${page.url}
-    """.trimIndent()
+    val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
 
     window.navigator.clipboard.writeText(textToCopy)
         .then {
-            val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
-            val originalText = copyButton?.textContent
+            val originalText = copyButton?.textContent ?: "Copy to Clipboard"
             copyButton?.textContent = "Copied!"
             window.setTimeout({
                 copyButton?.textContent = originalText
             }, 2000)
+            null
         }
         .catch { error ->
             console.error("Failed to copy:", error)
+            null
         }
 }
+
+@Suppress("UNUSED_PARAMETER")
+private fun encodeURIComponent(value: String): String =
+    js("encodeURIComponent(value)") as String
