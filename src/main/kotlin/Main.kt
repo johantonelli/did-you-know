@@ -44,16 +44,9 @@ fun main() {
 }
 
 fun getCategoryFromUrl(): String? {
-    // First check hash (works locally): e.g., #science
+    // Use hash-based routing (works everywhere): e.g., #science
     val hash = window.location.hash.trimStart('#').takeIf { it.isNotEmpty() }
-    if (hash != null) return hash
-
-    // Then check path (works on server): e.g., /science
-    val path = window.location.pathname.trim('/').takeIf { it.isNotEmpty() }
-    // Ignore if path looks like a file (local file access)
-    if (path != null && !path.contains('.')) return path
-
-    return null
+    return hash
 }
 
 fun setupUI() {
@@ -74,24 +67,21 @@ fun setupUI() {
 
 fun setupCategoryLinks() {
     val categoryLinksContainer = document.getElementById("category-links") as? HTMLElement ?: return
-    val isLocalFile = window.location.protocol == "file:"
 
     // Add "All" link
     val allLink = document.createElement("a") as HTMLAnchorElement
-    allLink.href = if (isLocalFile) "#" else "/"
+    allLink.href = "#"
     allLink.textContent = "All"
     if (currentCategory == null) {
         allLink.classList.add("active")
     }
     allLink.onclick = { e ->
-        if (isLocalFile) {
-            e.preventDefault()
-            window.location.hash = ""
-            currentCategory = null
-            updateCategoryDisplay()
-            loadRandomFact()
-            updateActiveLink(categoryLinksContainer, null)
-        }
+        e.preventDefault()
+        window.location.hash = ""
+        currentCategory = null
+        updateCategoryDisplay()
+        loadRandomFact()
+        updateActiveLink(categoryLinksContainer, null)
         null
     }
     categoryLinksContainer.appendChild(allLink)
@@ -99,20 +89,18 @@ fun setupCategoryLinks() {
     // Add predefined category links
     predefinedCategories.forEach { category ->
         val link = document.createElement("a") as HTMLAnchorElement
-        link.href = if (isLocalFile) "#${category.name}" else "/${category.name}"
+        link.href = "#${category.name}"
         link.textContent = category.displayName
         if (currentCategory?.lowercase() == category.name) {
             link.classList.add("active")
         }
         link.onclick = { e ->
-            if (isLocalFile) {
-                e.preventDefault()
-                window.location.hash = category.name
-                currentCategory = category.name
-                updateCategoryDisplay()
-                loadRandomFact()
-                updateActiveLink(categoryLinksContainer, category.name)
-            }
+            e.preventDefault()
+            window.location.hash = category.name
+            currentCategory = category.name
+            updateCategoryDisplay()
+            loadRandomFact()
+            updateActiveLink(categoryLinksContainer, category.name)
             null
         }
         categoryLinksContainer.appendChild(link)
