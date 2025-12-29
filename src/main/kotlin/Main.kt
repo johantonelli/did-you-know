@@ -30,14 +30,16 @@ val predefinedCategories = listOf(
     Category("sports", "Sports", "Category:Sports")
 )
 
-// Pre-compiled regex patterns for text cleaning
-private val DISPLAYSTYLE_REGEX = Regex("""\{\\displaystyle[^}]*\}""")
-private val LATEX_COMMAND_REGEX = Regex("""\{\\[a-z]+[^}]*\}""")
-private val BACKSLASH_COMMAND_REGEX = Regex("""\\[a-zA-Z]+""")
-private val CURLY_BRACE_REGEX = Regex("""\{|\}""")
-private val MULTIPLE_SPACES_REGEX = Regex("""\s{2,}""")
-private val SPACE_BEFORE_PUNCTUATION_REGEX = Regex("""\s+([.,;:])""")
-private val UNICODE_SPACES_REGEX = Regex("""[\u2060\u200B\u00A0]+""")
+// Text cleaning patterns - applied in cleanExtract()
+private val CLEANUP_PATTERNS = listOf(
+    """\{\\displaystyle[^}]*[}]""" to "",      // LaTeX displaystyle
+    """\{\\[a-z]+[^}]*[}]""" to "",            // Other LaTeX commands
+    """\\[a-zA-Z]+""" to "",                   // Backslash commands
+    """[{][}]|[{]|[}]""" to "",                // Curly braces
+    """\s{2,}""" to " ",                       // Multiple spaces
+    """\s+([.,;:])""" to "$1",                 // Space before punctuation
+    """[\u2060\u200B\u00A0]+""" to " "         // Unicode spaces
+)
 
 private var currentPage: WikiPage? = null
 private var currentCategory: String? = null
@@ -303,15 +305,11 @@ private fun parseWikiPage(data: dynamic): WikiPage {
 }
 
 private fun cleanExtract(text: String): String {
-    return text
-        .replace(DISPLAYSTYLE_REGEX, "")
-        .replace(LATEX_COMMAND_REGEX, "")
-        .replace(BACKSLASH_COMMAND_REGEX, "")
-        .replace(CURLY_BRACE_REGEX, "")
-        .replace(MULTIPLE_SPACES_REGEX, " ")
-        .replace(SPACE_BEFORE_PUNCTUATION_REGEX, "$1")
-        .replace(UNICODE_SPACES_REGEX, " ")
-        .trim()
+    var result = text
+    for ((pattern, replacement) in CLEANUP_PATTERNS) {
+        result = result.replace(Regex(pattern), replacement)
+    }
+    return result.trim()
 }
 
 private fun displayFact(page: WikiPage) {
