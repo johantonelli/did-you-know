@@ -283,9 +283,35 @@ fun parseWikiPage(data: dynamic): WikiPage {
     val page = pages[pageId].asDynamic()
 
     val title = page.title as String
-    val extract = (page.extract as? String) ?: "No description available."
+    val rawExtract = (page.extract as? String) ?: "No description available."
+    val extract = cleanExtract(rawExtract)
     val articleUrl = "https://en.wikipedia.org/wiki/${js("encodeURIComponent")(title.replace(" ", "_"))}"
     return WikiPage(title, extract, articleUrl)
+}
+
+fun cleanExtract(text: String): String {
+    // Remove LaTeX displaystyle markup: {\displaystyle ...}
+    var cleaned = text.replace(Regex("""\{\\displaystyle[^}]*\}"""), "")
+
+    // Remove other common LaTeX patterns
+    cleaned = cleaned.replace(Regex("""\{\\[a-z]+[^}]*\}"""), "")
+
+    // Remove standalone backslash commands like \rho, \alpha, etc.
+    cleaned = cleaned.replace(Regex("""\\[a-zA-Z]+"""), "")
+
+    // Remove leftover curly braces
+    cleaned = cleaned.replace(Regex("""\{|\}"""), "")
+
+    // Clean up multiple spaces
+    cleaned = cleaned.replace(Regex("""\s{2,}"""), " ")
+
+    // Clean up spaces before punctuation
+    cleaned = cleaned.replace(Regex("""\s+([.,;:])"""), "$1")
+
+    // Remove the special Unicode characters often used for math (empty boxes, etc.)
+    cleaned = cleaned.replace(Regex("""[\u2060\u200B\u00A0]+"""), " ")
+
+    return cleaned.trim()
 }
 
 fun displayFact(page: WikiPage) {
