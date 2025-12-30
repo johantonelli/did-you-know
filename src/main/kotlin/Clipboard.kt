@@ -21,6 +21,7 @@ fun copyImgToClipboard() {
         if (html2canvasFunc == null || html2canvasFunc == undefined) {
             console.error("html2canvas library not loaded")
             textWrapper.classList.remove("expanded")
+            factContainer.classList.remove("clipboard")
             return@setTimeout
         }
 
@@ -28,6 +29,7 @@ fun copyImgToClipboard() {
             .then { canvas: dynamic ->
                 // Restore the original layout
                 textWrapper.classList.remove("expanded")
+                factContainer.classList.remove("clipboard")
 
                 // Convert canvas to blob and copy to clipboard
                 Promise { resolve: (Unit) -> Unit, _: (Throwable) -> Unit ->
