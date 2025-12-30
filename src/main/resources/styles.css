@@ -168,6 +168,12 @@ h1 {
     padding-right: 8px;
 }
 
+.fact-text-wrapper.expanded {
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+}
+
 .fact-text-wrapper::-webkit-scrollbar {
     width: 6px;
 }
@@ -190,7 +196,7 @@ h1 {
     font-size: 1em;
     line-height: 1.5;
     margin: 0;
-    text-align: justify;
+    text-align: left;
     font-weight: 300;
 }
 
@@ -229,21 +235,21 @@ h1 {
     background: var(--mint);
     border-top: 2px solid var(--charcoal);
     border-bottom: 2px solid var(--charcoal);
-}
 
-#reload-btn, #copy-btn {
-    background: var(--cream);
-    color: var(--charcoal);
-    border: 2px solid var(--charcoal);
-    padding: 10px 24px;
-    font-size: 0.8em;
-    cursor: pointer;
-    font-weight: 500;
-    font-family: inherit;
-    letter-spacing: 0.05em;
-    margin: 4px 6px;
-    transition: all 0.2s ease;
-    box-shadow: 3px 3px 0px var(--charcoal);
+    button {
+        background: var(--cream);
+        color: var(--charcoal);
+        border: 2px solid var(--charcoal);
+        padding: 10px 24px;
+        font-size: 0.8em;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+        letter-spacing: 0.05em;
+        margin: 4px 6px;
+        transition: all 0.2s ease;
+        box-shadow: 3px 3px 0px var(--charcoal);
+    }
 }
 
 #reload-btn:hover, #copy-btn:hover {
@@ -479,4 +485,16 @@ h1 {
         opacity: 0;
         transform: translate(-50%, -50%) scale(2.5);
     }
+}
+
+.container.clipboard {
+    .button-container,
+    .category-section,
+    .footer,
+    #fact-link,
+    #current-category {
+        display: none
+    }
+
+
 }

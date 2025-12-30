@@ -1,12 +1,15 @@
+
+
 import kotlinx.browser.document
 import kotlinx.browser.window
-import org.w3c.dom.HTMLAnchorElement
-import org.w3c.dom.HTMLButtonElement
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLElement
+import org.w3c.dom.*
 import org.w3c.dom.events.MouseEvent
 import kotlin.js.Promise
 import kotlin.random.Random
+
+/* External declaration for html2canvas */
+@JsName("html2canvas")
+external fun html2canvas(element: HTMLElement, options: dynamic = definedExternally): Promise<HTMLCanvasElement>
 
 data class WikiPage(
     val title: String,
@@ -41,7 +44,7 @@ private val CLEANUP_PATTERNS = listOf(
     """[\u2060\u200B\u00A0]+""" to " "         // Unicode spaces
 )
 
-private var currentPage: WikiPage? = null
+var currentPage: WikiPage? = null
 private var currentCategory: String? = null
 private var entropyData = mutableListOf<Long>()
 private const val ENTROPY_COLLECTION_TIME = 5000 // 5 seconds
@@ -67,7 +70,12 @@ private fun setupUI() {
     }
 
     (document.getElementById("copy-btn") as? HTMLButtonElement)?.onclick = {
-        copyToClipboard()
+        copyText()
+        null
+    }
+
+    (document.getElementById("img-btn") as? HTMLButtonElement)?.onclick = {
+        copyImgToClipboard()
         null
     }
 
@@ -338,34 +346,6 @@ private fun displayFact(page: WikiPage) {
 private fun displayError() {
     document.getElementById("fact-title")?.textContent = "Oops!"
     document.getElementById("fact-text")?.textContent = "Failed to load a random fact. Please try again!"
-}
-
-private fun copyToClipboard() {
-    val page = currentPage ?: return
-
-    val textToCopy = buildString {
-        appendLine("Did you know...")
-        appendLine()
-        appendLine(page.extract)
-        appendLine()
-        append(page.url)
-    }
-
-    val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
-
-    window.navigator.clipboard.writeText(textToCopy)
-        .then {
-            val originalText = copyButton?.textContent ?: "Copy to Clipboard"
-            copyButton?.textContent = "Copied!"
-            window.setTimeout({
-                copyButton?.textContent = originalText
-            }, 2000)
-            null
-        }
-        .catch { error ->
-            console.error("Failed to copy:", error)
-            null
-        }
 }
 
 // ============== Entropy Collection ==============

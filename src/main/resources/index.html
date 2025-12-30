@@ -9,11 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!--suppress HtmlUnknownTarget -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <div id="container" class="container">
         <div class="header">
             <h1>Did You Know...</h1>
         </div>
@@ -33,6 +34,7 @@
         </div>
 
         <div class="button-container">
+            <button id="img-btn"><i class="fa fa-camera-retro"></i> Copy image</button>
             <button id="copy-btn"><i class="fa-regular fa-clipboard"></i> Copy to Clipboard</button>
             <button id="reload-btn"><i class="fa-solid fa-shuffle"></i> Another Fact, Please</button>
         </div>
