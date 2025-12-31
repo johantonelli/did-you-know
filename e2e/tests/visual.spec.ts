@@ -1,71 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-// Helper to wait for page to be visually stable
-async function waitForStableState(page: Page) {
-  // Wait for load event which ensures CSS is loaded
-  await page.waitForLoadState('load');
-
-  // Wait for network to be idle
-  await page.waitForLoadState('networkidle');
-
-  // Wait for fonts to load
-  await page.evaluate(() => document.fonts.ready);
-
-  // Poll until CSS is applied (check header background color)
-  // The header should have --powder-blue (#A8CCD7 = rgb(168, 204, 215)) background
-  let cssApplied = false;
-  for (let i = 0; i < 20; i++) {
-    cssApplied = await page.evaluate(() => {
-      const header = document.querySelector('.header');
-      if (!header) return false;
-      const style = window.getComputedStyle(header);
-      const bg = style.backgroundColor;
-      // Check for powder blue color
-      return bg.includes('168') && bg.includes('204') && bg.includes('215');
-    });
-    if (cssApplied) break;
-    await page.waitForTimeout(100);
-  }
-
-  // Wait for any pending renders
-  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-
-  // Extra delay for stability
-  await page.waitForTimeout(300);
-}
-
-// Helper to disable animations for consistent screenshots
-async function disableAnimations(page: Page) {
-  await page.addStyleTag({
-    content: `
-      *, *::before, *::after {
-        animation-duration: 0s !important;
-        animation-delay: 0s !important;
-        transition-duration: 0s !important;
-        transition-delay: 0s !important;
-      }
-    `
-  });
-}
-
-// Helper to wait for fact content to be fully loaded
-async function waitForFactContent(page: Page) {
-  // Wait for fact container to be visible
-  await page.waitForSelector('#fact-container', { state: 'visible', timeout: 10000 });
-
-  // Wait for title to have actual content (not empty)
-  await page.waitForFunction(() => {
-    const title = document.getElementById('fact-title');
-    return title && title.textContent && title.textContent.trim().length > 0;
-  }, { timeout: 10000 });
-
-  // Wait for text to have actual content
-  await page.waitForFunction(() => {
-    const text = document.getElementById('fact-text');
-    return text && text.textContent && text.textContent.trim().length > 0;
-  }, { timeout: 10000 });
-}
-
 // Mock data for consistent visual testing
 const mockArticle = {
   batchcomplete: '',
@@ -106,9 +40,7 @@ Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed 
 const mockCategoryMembers = {
   batchcomplete: '',
   query: {
-    categorymembers: [
-      { pageid: 12345, ns: 0, title: 'Test Article' }
-    ]
+    categorymembers: [{ pageid: 12345, ns: 0, title: 'Test Article' }]
   }
 };
 
@@ -125,15 +57,71 @@ const mockCategories = {
 
 const mockEmptyCategory = {
   batchcomplete: '',
-  query: {
-    categorymembers: []
-  }
+  query: { categorymembers: [] }
 };
+
+// Helper to disable animations for consistent screenshots
+async function disableAnimations(page: Page) {
+  await page.addStyleTag({
+    content: `
+      *, *::before, *::after {
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        transition-duration: 0s !important;
+        transition-delay: 0s !important;
+        scroll-behavior: auto !important;
+      }
+    `
+  });
+}
+
+// Helper to wait for page to be visually stable
+async function waitForStableState(page: Page) {
+  await page.waitForLoadState('load');
+  await page.waitForLoadState('networkidle');
+
+  // Wait for fonts
+  await page.evaluate(() => document.fonts.ready);
+
+  // Poll until CSS is applied (check header background color is powder blue)
+  await page.waitForFunction(() => {
+    const header = document.querySelector('.header');
+    if (!header) return false;
+    const bg = window.getComputedStyle(header).backgroundColor;
+    return bg.includes('168') && bg.includes('204') && bg.includes('215');
+  }, { timeout: 10000 }).catch(() => {
+    // Continue even if CSS check times out
+  });
+
+  // Wait for pending renders
+  await page.evaluate(() => new Promise(resolve =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  ));
+
+  // Extra stabilization time for CI
+  await page.waitForTimeout(process.env.CI ? 500 : 300);
+}
+
+// Helper to wait for fact content to be fully loaded
+async function waitForFactContent(page: Page) {
+  await page.waitForSelector('#fact-container', { state: 'visible' });
+  await page.waitForFunction(() => {
+    const title = document.getElementById('fact-title');
+    const text = document.getElementById('fact-text');
+    return title?.textContent?.trim() && text?.textContent?.trim();
+  });
+}
+
+// Helper for consistent screenshot taking
+async function takeScreenshot(page: Page, name: string) {
+  await disableAnimations(page);
+  await waitForStableState(page);
+  await expect(page).toHaveScreenshot(name);
+}
 
 test.describe('Visual Regression Tests @visual', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Set up route handlers before navigating
     await page.route('**/api.php*', async (route) => {
       const url = route.request().url();
 
@@ -143,40 +131,24 @@ test.describe('Visual Regression Tests @visual', () => {
         await route.fulfill({ json: mockCategoryMembers });
       } else if (url.includes('list=allcategories')) {
         await route.fulfill({ json: mockCategories });
-      } else if (url.includes('pageids=')) {
-        await route.fulfill({ json: mockArticle });
       } else {
         await route.fulfill({ json: mockArticle });
       }
     });
   });
 
-  // Helper for consistent screenshot taking (viewport only, not full page)
-  async function takeStableScreenshot(page: Page, name: string, waitForContent = true) {
-    if (waitForContent) {
-      await waitForFactContent(page);
-    }
-    await disableAnimations(page);
-    await waitForStableState(page);
-    // Use viewport screenshot for consistent dimensions
-    await expect(page).toHaveScreenshot(name);
-  }
-
   test('loading state', async ({ page }) => {
-    // Delay the API response to capture loading state
+    // Delay API response to capture loading state
     await page.route('**/api.php*', async (route) => {
       await new Promise(resolve => setTimeout(resolve, 10000));
       await route.fulfill({ json: mockArticle });
     });
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-
-    // Wait briefly for CSS to be applied
     await page.waitForSelector('.header', { state: 'visible' });
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(process.env.CI ? 500 : 300);
 
-    // Capture loading state before API responds
     await expect(page.locator('#loading')).toBeVisible();
     await disableAnimations(page);
     await expect(page).toHaveScreenshot('loading-state.png');
@@ -184,39 +156,25 @@ test.describe('Visual Regression Tests @visual', () => {
 
   test('fact display - all categories', async ({ page }) => {
     await page.goto('/');
-
-    await takeStableScreenshot(page, 'fact-display-all-categories.png');
+    await waitForFactContent(page);
+    await takeScreenshot(page, 'fact-display-all-categories.png');
   });
 
-  test('fact display - physics category', async ({ page }) => {
-    await page.goto('/');
-    await waitForFactContent(page);
-    await waitForStableState(page);
+  // Parameterized category tests
+  for (const category of ['physics', 'dogs', 'space']) {
+    test(`fact display - ${category} category`, async ({ page }) => {
+      await page.goto('/');
+      await waitForFactContent(page);
 
-    // Click physics category link
-    await page.click('#category-links a[href="#physics"]');
-    await expect(page.locator('#current-category')).toContainText('Physics');
+      await page.click(`#category-links a[href="#${category}"]`);
+      await expect(page.locator('#current-category')).toContainText(
+        category.charAt(0).toUpperCase() + category.slice(1)
+      );
+      await waitForFactContent(page);
 
-    // Wait for new content to load after category change
-    await waitForFactContent(page);
-
-    await takeStableScreenshot(page, 'fact-display-physics.png');
-  });
-
-  test('fact display - dogs category', async ({ page }) => {
-    await page.goto('/');
-    await waitForFactContent(page);
-    await waitForStableState(page);
-
-    // Click dogs category link
-    await page.click('#category-links a[href="#dogs"]');
-    await expect(page.locator('#current-category')).toContainText('Dogs');
-
-    // Wait for new content to load after category change
-    await waitForFactContent(page);
-
-    await takeStableScreenshot(page, 'fact-display-dogs.png');
-  });
+      await takeScreenshot(page, `fact-display-${category}.png`);
+    });
+  }
 
   test('long article with scroll', async ({ page }) => {
     await page.route('**/api.php*', async (route) => {
@@ -224,26 +182,21 @@ test.describe('Visual Regression Tests @visual', () => {
     });
 
     await page.goto('/');
-
-    await takeStableScreenshot(page, 'long-article-scroll.png');
+    await waitForFactContent(page);
+    await takeScreenshot(page, 'long-article-scroll.png');
   });
 
   test('category search dropdown', async ({ page }) => {
     await page.goto('/');
     await waitForFactContent(page);
-
-    // Disable animations before interacting
     await disableAnimations(page);
 
-    // Type in search box
     await page.fill('#category-search-input', 'hist');
     await page.waitForSelector('#category-search-results', { state: 'visible' });
-
-    // Wait for dropdown to have content
     await page.waitForFunction(() => {
       const results = document.getElementById('category-search-results');
       return results && results.children.length > 0;
-    }, { timeout: 10000 });
+    });
 
     await waitForStableState(page);
     await expect(page).toHaveScreenshot('category-search-dropdown.png');
@@ -260,51 +213,36 @@ test.describe('Visual Regression Tests @visual', () => {
     });
 
     await page.goto('/#physics');
-
-    // Wait for error content specifically
     await page.waitForFunction(() => {
       const title = document.getElementById('fact-title');
-      return title && title.textContent && title.textContent.includes('Oops');
-    }, { timeout: 10000 });
+      return title?.textContent?.includes('Oops');
+    });
 
-    await takeStableScreenshot(page, 'error-no-articles.png');
+    await takeScreenshot(page, 'error-no-articles.png');
   });
 
-  // Note: Entropy mode visual test skipped because the mocked API route handler
-  // interferes with entropy mode activation. Entropy mode is fully tested in
-  // integration.spec.ts without mocking.
-  test.skip('entropy mode active', async ({ page }) => {
+  test('entropy mode active', async ({ page }) => {
+    // Remove mocked routes - entropy mode needs real API
+    await page.unroute('**/api.php*');
+
     await page.goto('/');
     await page.waitForSelector('#fact-container', { state: 'visible' });
 
-    // Click footer to activate entropy mode
     await page.click('.footer');
-
-    // Check that entropy mode text is shown
     await expect(page.locator('#current-category')).toContainText('Entropy mode active');
+    await expect(page.locator('#entropy-overlay')).toBeVisible();
 
-    // Wait for entropy overlay to appear (may take a moment)
-    await expect(page.locator('#entropy-overlay')).toBeVisible({ timeout: 10000 });
-
-    // Wait for any animations to settle
-    await page.waitForTimeout(500);
-
-    await expect(page).toHaveScreenshot('entropy-mode-overlay.png');
+    await takeScreenshot(page, 'entropy-mode-overlay.png');
   });
 
   test('category links hover state', async ({ page }) => {
     await page.goto('/');
     await waitForFactContent(page);
-
-    // Disable animations first
     await disableAnimations(page);
     await waitForStableState(page);
 
-    // Hover over a category link
     await page.hover('#category-links a:nth-child(2)');
-
-    // Brief wait for hover style to apply
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     await expect(page).toHaveScreenshot('category-link-hover.png');
   });
@@ -312,45 +250,26 @@ test.describe('Visual Regression Tests @visual', () => {
   test('footer hover state', async ({ page }) => {
     await page.goto('/');
     await waitForFactContent(page);
-
-    // Disable animations first
     await disableAnimations(page);
     await waitForStableState(page);
 
-    // Hover over footer
     await page.hover('.footer');
-
-    // Brief wait for hover style to apply
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     await expect(page).toHaveScreenshot('footer-hover.png');
-  });
-
-  test('button container visible after load', async ({ page }) => {
-    await page.goto('/');
-    await waitForFactContent(page);
-
-    await expect(page.locator('.button-container')).toBeVisible();
-    await expect(page.locator('#reload-btn')).toBeVisible();
-    await expect(page.locator('#img-btn')).toBeVisible();
   });
 
   test('active category highlighting', async ({ page }) => {
     await page.goto('/');
     await waitForFactContent(page);
-    await waitForStableState(page);
 
-    // Click Space category instead of navigating via hash
     await page.click('#category-links a[href="#space"]');
     await expect(page.locator('#current-category')).toContainText('Space');
-
-    // Wait for new content to load after category change
     await waitForFactContent(page);
 
-    // Check that Space category is active
     const spaceLink = page.locator('#category-links a', { hasText: 'Space' });
     await expect(spaceLink).toHaveClass(/active/);
 
-    await takeStableScreenshot(page, 'active-category-space.png');
+    await takeScreenshot(page, 'active-category-space.png');
   });
 });

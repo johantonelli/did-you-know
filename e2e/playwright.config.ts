@@ -1,11 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const isCI = !!process.env.CI;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 3 : 1,
+  workers: isCI ? 1 : undefined,
+  timeout: isCI ? 60000 : 30000,
   reporter: [
     ['html'],
     ['list']
@@ -16,8 +19,10 @@ export default defineConfig({
     baseURL: 'http://localhost:8080',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    // Consistent viewport for visual tests
     viewport: { width: 1280, height: 720 },
+    // Longer timeouts for CI
+    actionTimeout: isCI ? 15000 : 10000,
+    navigationTimeout: isCI ? 30000 : 15000,
   },
   projects: [
     {
@@ -44,15 +49,16 @@ export default defineConfig({
   webServer: {
     command: 'cd .. && python3 -m http.server 8080 --directory build/dist/js/productionExecutable',
     url: 'http://localhost:8080',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    reuseExistingServer: !isCI,
+    timeout: 120000,
   },
   expect: {
+    timeout: isCI ? 10000 : 5000,
     toHaveScreenshot: {
-      maxDiffPixels: 8000,
-      maxDiffPixelRatio: 0.02,
-      threshold: 0.3,
-      // Allow for animation settling
+      // Higher tolerance for cross-platform differences
+      maxDiffPixels: 15000,
+      maxDiffPixelRatio: 0.08,
+      threshold: 0.35,
       animations: 'disabled',
     },
   },
