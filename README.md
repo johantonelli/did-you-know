@@ -7,8 +7,10 @@ A simple static website built with Kotlin/JS that displays random Wikipedia arti
 ## Features
 
 - Fetches random Wikipedia articles using the Wikipedia API
-- **Category filtering**: Browse facts by category using URL paths (e.g., `/science`, `/history`)
-- Displays the first 100 words with a link to the full article
+- **Category filtering**: Browse facts by category (Physics, Dogs, Space, Music)
+- **Category search**: Search for any Wikipedia category using the search box
+- **Entropy mode**: Generate random articles using mouse/touch movement entropy
+- Displays article introductions with a link to the full article
 - Built entirely with Kotlin/JS
 - Deployed as a static site on GitHub Pages
 
@@ -18,13 +20,12 @@ You can filter random facts by category using the URL hash:
 
 - `#` or no hash - All categories (completely random)
 - `#physics` - Physics articles
-- `#computer-science` - Computer Science articles
-- `#animals` - Animal articles
-- `#art` - Art articles
-- `#historic-buildings` - Historic Buildings articles
-- `#entropy` - **Special mode**: Generates a random article based on your mouse/touch movements
+- `#dogs` - Dog articles
+- `#space` - Space and astronomy articles
+- `#music` - Music articles
+- `#~entropy` - **Special mode**: Generates a random article based on your mouse/touch movements
 
-**Custom categories**: You can also use any Wikipedia category by typing it in the URL hash. For example, `#Music` will fetch random articles from Wikipedia's "Category:Music".
+**Custom categories**: Use the search box at the top of the page to find any Wikipedia category. Results appear as you type, and clicking a result will filter articles to that category.
 
 ### Entropy Mode
 
@@ -95,17 +96,29 @@ Your site will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPO/`
 ```
 .
 ├── src/
-│   └── main/
-│       ├── kotlin/
-│       │   └── Main.kt          # Kotlin/JS code for Wikipedia API integration
-│       └── resources/
-│           ├── index.html       # HTML template
-│           └── styles.css       # Stylesheet
+│   ├── main/
+│   │   ├── kotlin/
+│   │   │   ├── Main.kt          # Entry point
+│   │   │   ├── Pages.kt         # Wikipedia API integration
+│   │   │   ├── SetupUI.kt       # UI setup and category search
+│   │   │   └── Entropy.kt       # Entropy mode logic
+│   │   └── resources/
+│   │       ├── index.html       # HTML template
+│   │       └── styles.css       # Stylesheet
+│   └── test/
+│       └── kotlin/              # Kotlin unit tests
+├── e2e/
+│   ├── tests/
+│   │   ├── visual.spec.ts       # Visual regression tests
+│   │   └── integration.spec.ts  # Wikipedia API integration tests
+│   ├── playwright.config.ts     # Playwright configuration
+│   └── package.json             # E2E test dependencies
 ├── build.gradle.kts             # Gradle build configuration
 ├── settings.gradle.kts          # Gradle settings
 └── .github/
     └── workflows/
-        └── deploy.yml           # GitHub Actions workflow
+        ├── deploy.yml           # GitHub Pages deployment
+        └── test.yml             # Test automation workflow
 ```
 
 ## How It Works
@@ -116,6 +129,62 @@ Your site will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPO/`
 4. **Dynamic Content**: JavaScript fetches and displays new content on each page load or button click
 5. **GitHub Pages**: Serves the static HTML and compiled JavaScript files
 
+## Testing
+
+The project includes comprehensive testing at multiple levels.
+
+### Unit Tests (Kotlin/JS)
+
+Run the Kotlin unit tests with:
+```bash
+./gradlew browserTest
+```
+
+This runs tests for:
+- Text cleanup/extract sanitization
+- Category parsing and handling
+- Entropy hash generation
+
+### E2E Tests (Playwright)
+
+End-to-end tests use Playwright for visual regression and integration testing.
+
+#### Setup
+```bash
+cd e2e
+npm install
+npx playwright install chromium
+```
+
+#### Run Visual Tests (with mocked data)
+```bash
+npm run test:visual
+```
+
+#### Run Integration Tests (real Wikipedia API)
+```bash
+npm run test:integration
+```
+
+#### Update Visual Snapshots
+```bash
+npm run test:update-snapshots
+```
+
+#### Run All Tests
+```bash
+npm test
+```
+
+### GitHub Actions
+
+All tests run automatically on push and pull requests via GitHub Actions. The workflow runs:
+1. Kotlin unit tests
+2. Build verification
+3. Visual regression tests (Chromium)
+4. Wikipedia API integration tests
+5. Cross-browser tests on main branch (Chromium, Firefox, WebKit)
+
 ## Technologies Used
 
 - **Kotlin/JS**: Main programming language, compiled to JavaScript
@@ -123,6 +192,8 @@ Your site will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPO/`
 - **Font Awesome**: Icons for buttons and categories
 - **GitHub Pages**: Free static site hosting
 - **GitHub Actions**: Automated build and deployment
+- **Playwright**: E2E and visual regression testing
+- **Karma**: Kotlin/JS unit test runner
 
 ## License
 
