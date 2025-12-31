@@ -4,6 +4,8 @@ import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.KeyboardEvent
 import kotlin.js.Promise
 
 /* External declaration for html2canvas */
@@ -24,16 +26,9 @@ data class Category(
 
 val predefinedCategories = listOf(
     Category("physics", "Physics", "Category:Physics", "fa-solid fa-atom"),
-    Category("computer-science", "Computer Science", "Category:Computer science", "fa-solid fa-laptop-code"),
-    Category("animals", "Animals", "Category:Animals", "fa-solid fa-paw"),
-    Category("art", "Art", "Category:Art", "fa-solid fa-palette"),
-    Category(
-        "historic-buildings",
-        "Historic Buildings",
-        "Category:Historic buildings and structures",
-        "fa-solid fa-building-columns"
-    ),
-    Category("entropy", "Entropy", "", "fa-solid fa-shuffle")
+    Category("dogs", "Dogs", "Category:Dogs", "fa-solid fa-dog"),
+    Category("space", "Space", "Category:Outer space", "fa-solid fa-rocket"),
+    Category("music", "Music", "Category:Music", "fa-solid fa-music")
 )
 
 // Text cleaning patterns - applied in cleanExtract()
@@ -84,6 +79,35 @@ internal fun setupCategoryLinks() {
     }
 }
 
+internal fun setupEntropyLink() {
+    val footer = document.querySelector(".footer") as? HTMLElement ?: return
+
+    // Check if entropy is currently active
+    if (currentCategory == "~entropy") {
+        footer.classList.add("active")
+    }
+
+    footer.onclick = { event ->
+        event.preventDefault()
+        window.location.hash = "~entropy"
+        currentCategory = "~entropy"
+        updateCategoryDisplay()
+        loadRandomFact()
+
+        // Remove active from category links
+        val container = document.getElementById("category-links") as? HTMLElement
+        container?.querySelectorAll("a")?.let { links ->
+            for (i in 0 until links.length) {
+                (links.item(i) as? HTMLElement)?.classList?.remove("active")
+            }
+        }
+
+        // Add active to footer
+        footer.classList.add("active")
+        null
+    }
+}
+
 private fun createCategoryLink(container: HTMLElement, displayName: String, categoryName: String?, icon: String) {
     val link = (document.createElement("a") as? HTMLAnchorElement) ?: return
     link.href = if (categoryName != null) "#$categoryName" else "#"
@@ -114,6 +138,9 @@ private fun createCategoryLink(container: HTMLElement, displayName: String, cate
         updateCategoryDisplay()
         loadRandomFact()
         updateActiveLink(container, categoryName)
+
+        // Remove active from footer (entropy)
+        (document.querySelector(".footer") as? HTMLElement)?.classList?.remove("active")
         null
     }
 
@@ -142,8 +169,14 @@ private fun updateActiveLink(container: HTMLElement, activeCategoryName: String?
 
 private fun updateCategoryDisplay() {
     val categoryDisplay = document.getElementById("current-category") as? HTMLElement ?: return
-    val displayName = getCurrentCategoryDisplayName()
-    categoryDisplay.textContent = if (displayName != null) "Category: $displayName" else "All Categories"
+
+    categoryDisplay.textContent = when {
+        currentCategory == "~entropy" -> "Entropy mode active"
+        else -> {
+            val displayName = getCurrentCategoryDisplayName()
+            if (displayName != null) "Category: $displayName" else "All Categories"
+        }
+    }
 }
 
 internal fun displayFact(page: WikiPage) {
@@ -151,6 +184,107 @@ internal fun displayFact(page: WikiPage) {
     document.getElementById("fact-text")?.textContent = page.extract
     (document.getElementById("fact-link") as? HTMLAnchorElement)?.href = page.url
 }
+
+internal fun setupCategorySearch() {
+    val searchInput = document.getElementById("category-search-input") as? HTMLInputElement ?: return
+    val searchBtn = document.getElementById("category-search-btn") as? HTMLButtonElement ?: return
+    val resultsContainer = document.getElementById("category-search-results") as? HTMLElement ?: return
+
+    var searchTimeout: Int? = null
+
+    fun performSearch() {
+        val query = searchInput.value.trim()
+        if (query.isEmpty()) {
+            resultsContainer.innerHTML = ""
+            resultsContainer.style.display = "none"
+            return
+        }
+
+        resultsContainer.innerHTML = "<div class=\"search-loading\">Searching...</div>"
+        resultsContainer.style.display = "block"
+
+        searchWikipediaCategories(query).then { categories ->
+            if (categories.isEmpty()) {
+                resultsContainer.innerHTML = "<div class=\"search-no-results\">No categories found</div>"
+            } else {
+                resultsContainer.innerHTML = ""
+                categories.forEach { category ->
+                    val resultItem = document.createElement("div")
+                    resultItem.className = "search-result-item"
+                    resultItem.textContent = category.displayName
+                    resultItem.addEventListener("click", {
+                        selectCustomCategory(category.name, category.displayName)
+                        searchInput.value = ""
+                        resultsContainer.innerHTML = ""
+                        resultsContainer.style.display = "none"
+                    })
+                    resultsContainer.appendChild(resultItem)
+                }
+            }
+        }.catch { error ->
+            console.error("Category search failed:", error)
+            resultsContainer.innerHTML = "<div class=\"search-error\">Search failed</div>"
+        }
+    }
+
+    // Debounced search on input
+    searchInput.addEventListener("input", {
+        searchTimeout?.let { window.clearTimeout(it) }
+        searchTimeout = window.setTimeout({ performSearch() }, 300)
+    })
+
+    // Search on Enter key
+    searchInput.addEventListener("keydown", { event ->
+        if ((event as KeyboardEvent).key == "Enter") {
+            searchTimeout?.let { window.clearTimeout(it) }
+            performSearch()
+        }
+    })
+
+    // Search on button click
+    searchBtn.onclick = {
+        searchTimeout?.let { window.clearTimeout(it) }
+        performSearch()
+        null
+    }
+
+    // Hide results when clicking outside
+    document.addEventListener("click", { event ->
+        val target = event.target as? HTMLElement
+        val searchWrapper = document.querySelector(".category-search") as? HTMLElement
+        if (searchWrapper != null && target != null && !searchWrapper.contains(target)) {
+            resultsContainer.innerHTML = ""
+            resultsContainer.style.display = "none"
+        }
+    })
+}
+
+private fun selectCustomCategory(wikiCategory: String, displayName: String) {
+    // Create a URL-friendly category name
+    val categorySlug = "custom:${encodeURIComponent(wikiCategory)}"
+
+    window.location.hash = categorySlug
+    currentCategory = categorySlug
+
+    // Store the custom category info for later use
+    customCategoryWiki = wikiCategory
+    customCategoryDisplay = displayName
+
+    updateCategoryDisplay()
+    loadRandomFact()
+
+    // Update active link styling
+    val container = document.getElementById("category-links") as? HTMLElement ?: return
+    val links = container.querySelectorAll("a")
+    for (i in 0 until links.length) {
+        val link = links.item(i) as? HTMLElement ?: continue
+        link.classList.remove("active")
+    }
+}
+
+// Store custom category info
+internal var customCategoryWiki: String? = null
+internal var customCategoryDisplay: String? = null
 
 @Suppress("UNUSED_PARAMETER")
 internal fun encodeURIComponent(value: String): String =

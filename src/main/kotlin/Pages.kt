@@ -2,26 +2,48 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 import kotlin.js.Promise
 import kotlin.random.Random
 
 internal fun getCurrentCategoryDisplayName(): String? {
     val cat = currentCategory ?: return null
+
+    // Handle entropy mode specially
+    if (cat == "~entropy") {
+        return null // Will be handled separately in updateCategoryDisplay
+    }
+
+    // Handle custom categories
+    if (cat.startsWith("custom:")) {
+        return customCategoryDisplay ?: cat.removePrefix("custom:")
+            .let { decodeURIComponent(it) }
+            .removePrefix("Category:")
+    }
+
     val predefined = predefinedCategories.find { it.name == cat.lowercase() }
     return predefined?.displayName ?: cat.replaceFirstChar { it.uppercase() }
 }
+
+@Suppress("UNUSED_PARAMETER")
+private fun decodeURIComponent(value: String): String =
+    js("decodeURIComponent(value)") as String
 
 internal fun loadRandomFact() {
     val factContainer = document.getElementById("fact-container") as? HTMLDivElement
     val loadingDiv = document.getElementById("loading") as? HTMLDivElement
     val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
+    val imgButton = document.getElementById("img-btn") as? HTMLButtonElement
+    val reloadButton = document.getElementById("reload-btn") as? HTMLButtonElement
+    val buttonContainer = document.querySelector(".button-container") as? HTMLElement
 
     factContainer?.style?.display = "none"
     loadingDiv?.style?.display = "block"
     copyButton?.style?.display = "none"
+    buttonContainer?.style?.display = "none"
 
     // Check if entropy mode
-    if (currentCategory == "entropy") {
+    if (currentCategory == "~entropy") {
         loadingDiv?.style?.display = "none"
         startEntropyCollection()
         return
@@ -32,14 +54,26 @@ internal fun loadRandomFact() {
             currentPage = page
             displayFact(page)
             loadingDiv?.style?.display = "none"
-            factContainer?.style?.display = "block"
+            factContainer?.style?.display = "flex"
+            buttonContainer?.style?.display = "block"
             copyButton?.style?.display = "inline-block"
+            imgButton?.style?.display = "inline-block"
+            reloadButton?.innerHTML = "<i class=\"fa-solid fa-shuffle\"></i> Another Fact, Please"
         }
         .catch { error ->
             console.error("Error fetching article:", error)
-            displayError()
+            val errorMessage = error.toString()
+            val displayMessage = if (errorMessage.contains("No articles found")) {
+                "No articles found in this category. Try a different one!"
+            } else {
+                null
+            }
+            displayError(displayMessage)
             loadingDiv?.style?.display = "none"
-            factContainer?.style?.display = "block"
+            factContainer?.style?.display = "flex"
+            buttonContainer?.style?.display = "block"
+            imgButton?.style?.display = "none"
+            reloadButton?.innerHTML = "<i class=\"fa-solid fa-rotate-right\"></i> Try Again"
         }
 }
 
@@ -71,8 +105,13 @@ private fun fetchCompletelyRandom(): Promise<WikiPage> {
 }
 
 private fun fetchRandomFromCategory(categoryName: String): Promise<WikiPage> {
-    val predefined = predefinedCategories.find { it.name == categoryName.lowercase() }
-    val wikiCategory = predefined?.wikiCategory ?: "Category:${categoryName.replaceFirstChar { it.uppercase() }}"
+    // Handle custom categories (format: custom:Category%3ACategoryName)
+    val wikiCategory = if (categoryName.startsWith("custom:")) {
+        customCategoryWiki ?: decodeURIComponent(categoryName.removePrefix("custom:"))
+    } else {
+        val predefined = predefinedCategories.find { it.name == categoryName.lowercase() }
+        predefined?.wikiCategory ?: "Category:${categoryName.replaceFirstChar { it.uppercase() }}"
+    }
     val encodedCategory = encodeURIComponent(wikiCategory)
 
     val collectedPageIds = mutableListOf<Int>()
@@ -186,9 +225,61 @@ private fun cleanExtract(text: String): String {
     return result.trim()
 }
 
-internal fun displayError() {
+internal fun displayError(message: String? = null) {
     document.getElementById("fact-title")?.textContent = "Oops!"
-    document.getElementById("fact-text")?.textContent = "Failed to load a random fact. Please try again!"
+    val errorMessage = message ?: "Failed to load a random fact. Please try again!"
+    document.getElementById("fact-text")?.textContent = errorMessage
+}
+
+data class WikiCategory(
+    val name: String,
+    val displayName: String
+)
+
+fun searchWikipediaCategories(searchTerm: String): Promise<List<WikiCategory>> {
+    if (searchTerm.isBlank()) {
+        return Promise.resolve(emptyList())
+    }
+
+    val encodedQuery = encodeURIComponent(searchTerm)
+    val url = buildString {
+        append("https://en.wikipedia.org/w/api.php?")
+        append("action=query&")
+        append("format=json&")
+        append("list=allcategories&")
+        append("acprefix=$encodedQuery&")
+        append("aclimit=8&")
+        append("origin=*")
+    }
+
+    return window.fetch(url)
+        .then { response -> response.json() }
+        .then { data -> parseCategoryResults(data) }
+}
+
+private fun parseCategoryResults(data: dynamic): List<WikiCategory> {
+    val categories = mutableListOf<WikiCategory>()
+    try {
+        val queryResult = data.query
+        val allcategories = queryResult?.allcategories
+
+        if (allcategories != null && allcategories != undefined) {
+            val length = allcategories.length as? Int ?: 0
+            for (i in 0 until length) {
+                val item = allcategories[i]
+                val categoryName = item["*"] as? String
+                if (categoryName != null) {
+                    categories.add(WikiCategory(
+                        name = "Category:$categoryName",
+                        displayName = categoryName
+                    ))
+                }
+            }
+        }
+    } catch (e: Exception) {
+        console.error("Error parsing category results:", e)
+    }
+    return categories.toList()
 }
 
 fun fetchMultipleRandomArticles(count: Int): Promise<List<WikiPage>> {

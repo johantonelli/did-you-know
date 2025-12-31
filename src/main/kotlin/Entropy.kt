@@ -9,8 +9,18 @@ import kotlin.random.Random
 private var entropyData = mutableListOf<Long>()
 private const val ENTROPY_COLLECTION_TIME = 5000 // 5 seconds
 
+private fun isTouchDevice(): Boolean {
+    return js("('ontouchstart' in window) || (navigator.maxTouchPoints > 0)") as Boolean
+}
+
 internal fun startEntropyCollection() {
     entropyData.clear()
+
+    val instruction = if (isTouchDevice()) {
+        "Touch and drag around the screen randomly"
+    } else {
+        "Move your cursor around randomly"
+    }
 
     // Create and show overlay
     val overlay = document.createElement("div")
@@ -19,7 +29,7 @@ internal fun startEntropyCollection() {
         <div class="entropy-content">
             <div class="entropy-icon"><i class="fa-solid fa-hand-pointer"></i></div>
             <h2>Generating Entropy</h2>
-            <p>Move your cursor or touch the screen randomly</p>
+            <p>$instruction</p>
             <div class="entropy-progress">
                 <div class="entropy-progress-bar" id="entropy-bar"></div>
             </div>
@@ -107,6 +117,9 @@ private fun processEntropyAndFetch() {
     val factContainer = document.getElementById("fact-container") as? HTMLDivElement
     val loadingDiv = document.getElementById("loading") as? HTMLDivElement
     val copyButton = document.getElementById("copy-btn") as? HTMLButtonElement
+    val imgButton = document.getElementById("img-btn") as? HTMLButtonElement
+    val reloadButton = document.getElementById("reload-btn") as? HTMLButtonElement
+    val buttonContainer = document.querySelector(".button-container") as? HTMLElement
 
     loadingDiv?.style?.display = "block"
 
@@ -135,14 +148,20 @@ private fun processEntropyAndFetch() {
             currentPage = page
             displayFact(page)
             loadingDiv?.style?.display = "none"
-            factContainer?.style?.display = "block"
+            factContainer?.style?.display = "flex"
+            buttonContainer?.style?.display = "block"
             copyButton?.style?.display = "inline-block"
+            imgButton?.style?.display = "inline-block"
+            reloadButton?.innerHTML = "<i class=\"fa-solid fa-shuffle\"></i> Another Fact, Please"
         }
         .catch { error ->
             console.error("Error fetching entropy article:", error)
             displayError()
             loadingDiv?.style?.display = "none"
-            factContainer?.style?.display = "block"
+            factContainer?.style?.display = "flex"
+            buttonContainer?.style?.display = "block"
+            imgButton?.style?.display = "none"
+            reloadButton?.innerHTML = "<i class=\"fa-solid fa-rotate-right\"></i> Try Again"
         }
 }
 

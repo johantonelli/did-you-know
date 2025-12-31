@@ -5,6 +5,8 @@ fun main() {
         currentCategory = getCategoryFromUrl()
         setupUI()
         setupCategoryLinks()
+        setupEntropyLink()
+        setupCategorySearch()
         loadRandomFact()
     }
 }
