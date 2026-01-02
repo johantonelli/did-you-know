@@ -55,10 +55,11 @@ export default defineConfig({
   expect: {
     timeout: isCI ? 10000 : 5000,
     toHaveScreenshot: {
-      // Higher tolerance for cross-platform differences
-      maxDiffPixels: 15000,
-      maxDiffPixelRatio: 0.08,
-      threshold: 0.35,
+      // Lower tolerances now that we use system fonts and disable anti-aliasing
+      // Small buffer for scrollbar/cursor rendering differences
+      maxDiffPixels: 500,
+      maxDiffPixelRatio: 0.01,
+      threshold: 0.2,
       animations: 'disabled',
     },
   },
