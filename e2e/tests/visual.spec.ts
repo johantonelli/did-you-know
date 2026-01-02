@@ -233,7 +233,7 @@ test.describe('Visual Regression Tests @visual', () => {
 
     // Wait for fonts and rendering to stabilize (styles already injected via beforeEach)
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(1000);
 
     await expect(page).toHaveScreenshot('loading-state.png');
   });
