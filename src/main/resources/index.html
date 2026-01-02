@@ -18,19 +18,30 @@
         <div class="header">
             <h1>Did You Know...</h1>
         </div>
-        <div id="current-category">All Categories</div>
-
-        <div id="loading" style="display: block;">
-            <div class="spinner"></div>
-            <p>Retrieving a fascinating fact...</p>
+        <div class="category-bar">
+            <span id="current-category">All Categories</span>
+            <div class="category-search">
+                <div class="search-input-wrapper">
+                    <input type="text" id="category-search-input" placeholder="Search categories..." autocomplete="off">
+                    <button id="category-search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+                <div id="category-search-results"></div>
+            </div>
         </div>
 
-        <div id="fact-container" style="display: none;">
-            <h2 id="fact-title"></h2>
-            <div class="fact-text-wrapper">
-                <p id="fact-text"></p>
+        <div class="content-area">
+            <div id="loading" style="display: block;">
+                <div class="spinner"></div>
+                <p>Retrieving a fascinating fact...</p>
             </div>
-            <a id="fact-link" href="#" target="_blank">Continue Reading <i class="fa-solid fa-arrow-right"></i></a>
+
+            <div id="fact-container" style="display: none;">
+                <h2 id="fact-title"></h2>
+                <div class="fact-text-wrapper">
+                    <p id="fact-text"></p>
+                </div>
+                <a id="fact-link" href="#" target="_blank">Continue Reading <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
         </div>
 
         <div class="button-container">
@@ -45,7 +56,7 @@
         </div>
 
         <div class="footer">
-            Powered by Wikipedia
+            <a href="#~entropy" id="entropy-link"><i class="fa-solid fa-shuffle"></i> Entropy Mode</a>
         </div>
     </div>
 

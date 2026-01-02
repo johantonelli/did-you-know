@@ -20,11 +20,16 @@ kotlin {
             webpackTask {
                 mainOutputFileName.set("wikifacts.js")
             }
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
         }
         binaries.executable()
     }
 }
 
 dependencies {
-    // No external dependencies needed - using browser APIs directly
+    testImplementation(kotlin("test"))
 }
